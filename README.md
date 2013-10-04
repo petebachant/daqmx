@@ -5,3 +5,7 @@ A [work-in-progress] wrapper to the National Instruments DAQmx driver. It depend
 Motivation
 ----------
 PyDAQmx works well, but its members don't show up in Spyder's autocompletion. Also, PyDAQmx has many style issues that make it harder to program. 
+
+To-do
+-----
+  * Finish setup package, or merge with PyDAQmx
