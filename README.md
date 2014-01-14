@@ -6,6 +6,3 @@ Motivation
 ----------
 PyDAQmx works well, but its members don't show up in Spyder's autocompletion. Also, PyDAQmx has some syntax that is difficult to work with. 
 
-To-do
------
-  * Finish setup package, or merge with PyDAQmx
