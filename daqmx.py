@@ -3,7 +3,7 @@
 This program is a wrapper to the NIDAQmx C library using ctypes.
 It depends on PyDAQmx for doing callbacks.
 
-All functions have the same mixed case structure
+All functions have the same camel case naming scheme.
 
 @author: Pete Bachant
 
