@@ -13,6 +13,5 @@ setup(
     url='https://github.com/petebachant/daqmx.git',
     license='LICENSE',
     description='Wrapper for the National Instruments DAQmx driver.',
-    long_description=open('README.md').read(),
-    install_requires=[]
+    long_description=open('README.md').read()
 )
