@@ -10,7 +10,26 @@ import time
 import daqmx
 import numpy as np
 
-class GlobalVirtualAIChannelTask(object):
+class AnalogInput(object):
+    def __init__(self):
+	    pass
+
+class AnalogOutput(object):
+    pass
+	
+class CounterInput(object):
+    pass
+	
+class CounterOutput(object):
+    pass
+	
+class DigitalInput(object):
+    pass
+	
+class DigitalOutput(object):
+    pass
+
+class GlobalVirtualAnalogInput(object):
     """Create an analog input task based on a global virtual channel."""
     def __init__(self, global_channels):
         self.global_channels = global_channels        
@@ -86,3 +105,6 @@ class GlobalVirtualAIChannelTask(object):
         
     def clear(self):
         daqmx.ClearTask(self.taskhandle)
+		
+class GlobalVirtualCounterInput(object):
+    pass
