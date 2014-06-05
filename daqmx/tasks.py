@@ -6,6 +6,7 @@ Created on Mon Sep 02 13:42:35 2013
 
 Create objects for DAQmx tasks
 """
+from __future__ import print_function, division
 import time
 import daqmx
 import numpy as np
@@ -88,7 +89,7 @@ class GlobalVirtualAnalogInput(object):
                 daqmx.Val_Acquired_Into_Buffer, int(self.sr/10), 0, 
                 EveryNCallback, id_data)    
         def DoneCallback_py(taskHandle, status, callbackData_ptr):
-            print "Status", status.value
+            print("Status", status.value)
             return 0
         DoneCallback = daqmx.DoneEventCallbackPtr(DoneCallback_py)
         daqmx.RegisterDoneEvent(self.taskhandle, 0, DoneCallback, None) 

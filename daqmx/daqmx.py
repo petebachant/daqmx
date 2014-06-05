@@ -8,6 +8,7 @@ All functions have the same camel case naming scheme.
 @author: Pete Bachant
 
 """
+from __future__ import print_function, division
 from PyDAQmx.DAQmxTypes import DAQmxEveryNSamplesEventCallbackPtr as EveryNSamplesEventCallbackPtr
 from PyDAQmx.DAQmxTypes import DAQmxDoneEventCallbackPtr as DoneEventCallbackPtr
 from PyDAQmx.DAQmxTypes import DAQmxSignalEventCallbackPtr as SignalEventCallbackPtr
@@ -399,7 +400,7 @@ def ErrorHandling(returned_value, fatalerror=True):
         estring = GetErrorString(rv)
         if fatalerror == True:
             raise RuntimeError(estring)
-        else: print estring
+        else: print(estring)
     else: return
     
     
@@ -457,5 +458,5 @@ if __name__ == "__main__":
     th = TaskHandle()
     CreateTask("", th)
     AddGlobalChansToTask(th, chan)
-    print GetAICustomScaleName(th, chan)
-    print GetScaleLinSlope("DragLScale")
+    print(GetAICustomScaleName(th, chan))
+    print(GetScaleLinSlope("DragLScale"))
