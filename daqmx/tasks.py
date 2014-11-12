@@ -10,25 +10,27 @@ from __future__ import print_function, division
 import time
 import daqmx
 import numpy as np
+from daqmx import channels
 
-class AnalogInput(object):
+class Task(object):
+    """DAQmx class object. Note that counter input tasks can only have one
+    channel per task."""
     def __init__(self):
-	    pass
+        self.handle = daqmx.TaskHandle()
+        
+    def start(self):
+        daqmx.StartTask(self.handle)
 
-class AnalogOutput(object):
-    pass
-	
-class CounterInput(object):
-    pass
-	
-class CounterOutput(object):
-    pass
-	
-class DigitalInput(object):
-    pass
-	
-class DigitalOutput(object):
-    pass
+    def stop(self):
+        daqmx.StopTask(self.handle)
+        
+    def clear(self):
+        daqmx.ClearTask(self.handle)
+
+
+
+
+
 
 class GlobalVirtualAnalogInput(object):
     """Create an analog input task based on a global virtual channel."""
