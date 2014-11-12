@@ -7,7 +7,6 @@ Created on Mon Sep 02 13:42:35 2013
 Create objects for DAQmx tasks
 """
 from __future__ import print_function, division
-import time
 import daqmx
 import numpy as np
 from daqmx import channels
@@ -15,10 +14,80 @@ from daqmx import channels
 class Task(object):
     """DAQmx class object. Note that counter input tasks can only have one
     channel per task."""
-    def __init__(self):
+    def __init__(self, name=""):
+        self.name = name
         self.handle = daqmx.TaskHandle()
+        daqmx.CreateTask(name.encode(), self.handle)
+        self.sample_rate = 100.0
+        self.timeout = 10.0 
+        self.samples_per_channel = 10
+        self.channels = []
+        self.sample_clock_source = ""
+        self.sample_clock_active_edge = "rising"
+        self.sample_mode = "continuous samples"
+        self.sample_clock_configured = False
+        
+    def create_channel(self):
+        """Creates and returns a channel object."""
+        return channels.Channel()        
+        
+    def add_channel(self, channel):
+        """Add existing channel object to channels dict."""
+        self.channels.append(channel)
+        phys_chan = channel.physical_channel.encode()
+        name = channel.name.encode()
+        term_conf = daqmx.parameters[channel.terminal_config]
+        maxval = channel.maxval
+        minval = channel.minval
+        units = daqmx.parameters[channel.units]
+        cust_scale_name = channel.custom_scale_name
+        if cust_scale_name:
+            units = daqmx.Val_FromCustomScale
+        if channel.channel_type.lower() == "analog input":
+            daqmx.CreateAIVoltageChan(self.handle, phys_chan, name, term_conf,
+                                      minval, maxval, units, cust_scale_name)
+        
+    def configure_sample_clock(self, sample_clock_source=None,
+                               sample_rate=None,
+                               sample_clock_active_edge=None,
+                               sample_mode=None,
+                               samples_per_channel=None):
+        """Configures sample clock timing for task."""
+        if sample_clock_source:
+            self.sample_clock_source = sample_clock_source
+        if sample_rate:
+            self.sample_rate = sample_rate
+        if sample_clock_active_edge:
+            self.sample_clock_active_edge = sample_clock_active_edge
+        if sample_mode:
+            self.sample_mode = sample_mode
+        if samples_per_channel:
+            self.samples_per_channel = samples_per_channel
+        sample_mode = daqmx.parameters[self.sample_mode]
+        sample_clock_active_edge = daqmx.parameters[self.sample_clock_active_edge]
+        daqmx.CfgSampClkTiming(self.handle, 
+                               self.sample_clock_source, 
+                               self.sample_rate, 
+                               sample_clock_active_edge, 
+                               sample_mode, 
+                               self.samples_per_channel)
+        self.sample_clock_configured = True
+                               
+    def check(self):
+        """Checks that all channel types in task are the same."""
+        chantype = self.channels[0].channel_type
+        passed = True
+        for chan in self.channels:
+            if chan.channel_type != chantype:
+                passed = False
+        if passed:
+            print("Channels are all the same type")
+        else:
+            print("Channels are not all the same type")
         
     def start(self):
+        if not self.sample_clock_configured:
+            self.configure_sample_clock()
         daqmx.StartTask(self.handle)
 
     def stop(self):
@@ -28,8 +97,17 @@ class Task(object):
         daqmx.ClearTask(self.handle)
 
 
-
-
+def test_task():
+    import time
+    task = Task()
+    c = task.create_channel()
+    c.channel_type = "analog input"
+    c.physical_channel = "Dev1/ai0"
+    task.add_channel(c)
+    task.start()
+    time.sleep(1)
+    task.stop()
+    task.clear()
 
 
 class GlobalVirtualAnalogInput(object):
@@ -111,3 +189,6 @@ class GlobalVirtualAnalogInput(object):
 		
 class GlobalVirtualCounterInput(object):
     pass
+
+if __name__ == "__main__":
+    test_task()

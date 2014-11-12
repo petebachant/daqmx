@@ -451,6 +451,13 @@ units = {Val_Seconds : "s",
          Val_VoltsPerVolt : "V/V",
          Val_mVoltsPerVolt : "mV/V",
          Val_Volts : "V"}
+         
+parameters = {"rising" : Val_Rising,
+              "falling" : Val_Falling,
+              "continuous samples" : Val_ContSamps,
+              "differential" : Val_Diff,
+              "volts" : Val_Volts,
+              "from custom scale" : Val_FromCustomScale}
 
     
 if __name__ == "__main__":
