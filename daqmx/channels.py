@@ -23,7 +23,17 @@ class Channel(object):
         self.maxval = 10.0
         self.units = "volts"
         self.custom_scale_name = None
+
+
+class AnalogInputChannel(Channel):
+    """Analog input channel object."""
+    def __init__(self):
+        Channel.__init__(self)
+        self.channel_type = "analog input"
         
         
 def test_channel():
     c = Channel()
+    
+if __name__ == "__main__":
+    test_channel()

@@ -6,7 +6,6 @@ Created on Wed Nov 12 16:09:27 2014
 """
 
 import daqmx
-import daqmx.tests
 
 if __name__ == "__main__":
     daqmx.tests.test_task()

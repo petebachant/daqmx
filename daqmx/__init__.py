@@ -6,3 +6,4 @@ Created on Sun Aug 04 08:44:14 2013
 """
 
 from daqmx.core import *
+from daqmx import tasks, channels, tests, threads

@@ -140,14 +140,13 @@ def ReadAnalogF64(taskhandle, samps_per_chan, timeout, fillmode,
     """Reads analog data."""                  
     read_array = np.zeros((samps_per_chan*nchan), dtype=np.float64)
     samps_pchan_read = int32()
-    
     rv = dmx.DAQmxReadAnalogF64(taskhandle, uInt32(samps_per_chan), 
             double(timeout), fillmode, read_array.ctypes.data,
-            uInt32(array_size_samps*nchan), byref(samps_pchan_read), None)                          
+            uInt32(int(array_size_samps*nchan)), byref(samps_pchan_read), None)                          
     ErrorHandling(rv, fatalerror)
     # Split up read array into a column per channel
     array2d = np.zeros((samps_per_chan, nchan))
-    for n in xrange(nchan):
+    for n in range(nchan):
         array2d[:,n] = read_array[n*samps_per_chan:(n+1)*samps_per_chan]
     return array2d, samps_pchan_read.value
 
@@ -366,7 +365,7 @@ def GetErrorString(errorcode, buffersize=512):
     errorstring = ctypes.create_string_buffer(buffersize)
     dmx.DAQmxGetErrorString(int32(errorcode), byref(errorstring), 
                             uInt32(buffersize));
-    return errorstring.value
+    return errorstring.value.decode()
     
     
 def RegisterEveryNSamplesEvent(taskHandle, everyNsamplesEventType, nSamples, 
@@ -457,7 +456,8 @@ parameters = {"rising" : Val_Rising,
               "continuous samples" : Val_ContSamps,
               "differential" : Val_Diff,
               "volts" : Val_Volts,
-              "from custom scale" : Val_FromCustomScale}
+              "from custom scale" : Val_FromCustomScale,
+              "group by channel" : Val_GroupByChannel}
 
     
 if __name__ == "__main__":

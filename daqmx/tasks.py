@@ -26,6 +26,8 @@ class Task(object):
         self.sample_clock_active_edge = "rising"
         self.sample_mode = "continuous samples"
         self.sample_clock_configured = False
+        self.fillmode = "group by channel"
+        self.task_type = ""
         
     def create_channel(self):
         """Creates and returns a channel object."""
@@ -46,6 +48,7 @@ class Task(object):
         if channel.channel_type.lower() == "analog input":
             daqmx.CreateAIVoltageChan(self.handle, phys_chan, name, term_conf,
                                       minval, maxval, units, cust_scale_name)
+            self.task_type = "analog input"
         
     def configure_sample_clock(self, sample_clock_source=None,
                                sample_rate=None,
@@ -72,8 +75,17 @@ class Task(object):
                                sample_mode, 
                                self.samples_per_channel)
         self.sample_clock_configured = True
+        
+    def read(self):
+        """Reads from the channels in the task."""
+        array_size_samps = self.sample_rate*self.samples_per_channel
+        fillmode = daqmx.parameters[self.fillmode]
+        if self.task_type == "analog input":
+            self.data, self.samples_per_channel_received = daqmx.ReadAnalogF64(
+                    self.handle, self.samples_per_channel, self.timeout, 
+                    fillmode, array_size_samps, len(self.channels))
                                
-    def check(self):
+    def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
         chantype = self.channels[0].channel_type
         passed = True
@@ -81,14 +93,20 @@ class Task(object):
             if chan.channel_type != chantype:
                 passed = False
         if passed:
-            print("Channels are all the same type")
+            if verbose:
+                print("Channels are all the same type")
         else:
-            print("Channels are not all the same type")
+            if verbose:
+                print("Channels are not all the same type")
+        return passed
         
     def start(self):
-        if not self.sample_clock_configured:
-            self.configure_sample_clock()
-        daqmx.StartTask(self.handle)
+        if self.check():
+            if not self.sample_clock_configured:
+                self.configure_sample_clock()
+            daqmx.StartTask(self.handle)
+        else:
+            raise RuntimeError("Cannot start task because it has mixed channel types")
 
     def stop(self):
         daqmx.StopTask(self.handle)
@@ -100,12 +118,17 @@ class Task(object):
 def test_task():
     import time
     task = Task()
-    c = task.create_channel()
-    c.channel_type = "analog input"
+    c = daqmx.channels.AnalogInputChannel()
     c.physical_channel = "Dev1/ai0"
     task.add_channel(c)
+    task.check(verbose=True)
     task.start()
-    time.sleep(1)
+    t0 = time.time()
+    while time.time() - t0 < 3:
+        time.sleep(1/task.sample_rate*10)
+        task.read()
+        print(task.samples_per_channel_received)
+        print(task.data)
     task.stop()
     task.clear()
 

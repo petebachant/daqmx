@@ -7,5 +7,4 @@ Created on Wed Nov 12 16:30:15 2014
 
 import daqmx
 
-def test_task():
-    print("Testing task object 5")
+from daqmx.tasks import test_task
