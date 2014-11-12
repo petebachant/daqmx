@@ -34,6 +34,7 @@ class AnalogInputChannel(Channel):
         
 def test_channel():
     c = Channel()
+    print(c.name)
     
 if __name__ == "__main__":
     test_channel()
