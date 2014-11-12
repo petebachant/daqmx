@@ -4,5 +4,5 @@ Created on Sun Aug 04 08:44:14 2013
 
 @author: Pete
 """
-from . import daqmx
-from .daqmx import *
+from . import core
+from .core import *
