@@ -7,11 +7,12 @@ Created on Tue May 21 21:06:37 2013
 This program aquires finite analog samples.
 
 """
+from __future__ import division, print_function
 import daqmx
 import time
 import numpy as np
 import matplotlib
-matplotlib.use("TkAgg")
+#matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
 
@@ -20,7 +21,7 @@ def main():
     # Task parameters
     taskhandle = daqmx.TaskHandle()
     daqmx.CreateTask("", taskhandle)
-    phys_chan = "cDAQ9188-16D66BBMod1/ai1"
+    phys_chan = b"Dev1/ai0"
     nchan = 1
     sr = 100.0
     dt = 1/sr
@@ -75,7 +76,7 @@ def main():
                                     
 
     daqmx.ClearTask(taskhandle)  
-    print "Task complete"    
+    print("Task complete")    
 
     
     if plotting == True:
