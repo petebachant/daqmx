@@ -11,8 +11,9 @@ import daqmx
 import numpy as np
 from daqmx import channels
 from PyDAQmx import Task as PyDaqMxTask
-from pxl import timeseries
 import pandas as pd
+import os
+import h5py
 
 class Task(PyDaqMxTask):
     """DAQmx class object. Note that counter input tasks can only have one
@@ -36,6 +37,8 @@ class Task(PyDaqMxTask):
         self.task_type = ""
         self.append_data = False
         self.autolog = False
+        self.append_data_limit = 10000 # Maximum number of datapoints to keep
+        self.autotrim = False # Only applicable if appending data
         
     def create_channel(self):
         """Creates and returns a channel object."""
@@ -84,7 +87,7 @@ class Task(PyDaqMxTask):
                                self.samples_per_channel)
         self.sample_clock_configured = True
     
-    def create_data_dict(self, time_array=True):
+    def create_dataframe(self, time_array=True):
         self.data = pd.DataFrame()
         self.time_array = time_array
         if self.time_array:
@@ -101,22 +104,22 @@ class Task(PyDaqMxTask):
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
         if self.append_data:
-            newdf = pd.DataFrame()
+            self.newdf = pd.DataFrame()
             if self.time_array:
                 newtime = np.arange(self.samples_per_channel_received + 1)/self.sample_rate
                 if len(self.data["time"]) == 0:
-                    newdf["time"] = newtime[:-1]
+                    self.newdf["time"] = newtime[:-1]
                 else:
                     last_time = self.data["time"].values[-1]
                     newtime += last_time
-                    newdf["time"] = newtime[1:]
+                    self.newdf["time"] = newtime[1:]
             for n, channel in enumerate(self.channels):
-                newdf[channel.name] = self.newdata[:,n]
-            self.data = self.data.append(newdf, ignore_index=False)
-            datalen = len(self.data)
-            if self.autolog and datalen > self.autolog_buffer_len:
+                self.newdf[channel.name] = self.newdata[:,n]
+            self.data = self.data.append(self.newdf, ignore_index=False)
+            if self.autolog:
                 self.do_autolog()
-                
+            if self.autotrim:
+                self.autotrim_dataframe()
         return self.newdata, self.samples_per_channel_received
                     
     def auto_register_every_n_samples_event(self):
@@ -143,34 +146,51 @@ class Task(PyDaqMxTask):
         print("Status", status.value)
         return 0 # The function should return an integer
         
-    def setup_autologging(self, filename, buffer_len=200, time_array=True):
+    def setup_autologging(self, filename, time_array=True,
+                          newfile=True):
         """Sets up channel to automatically stream data to file---either
         raw text, CSV, or HDF5, depending on filename"""
-        self.autolog_buffer_len = buffer_len
         self.autolog = True
         self.autolog_filename = filename
         self.autolog_filetype = self.autolog_filename.split(".")[-1].lower() 
         if not self.append_data:
             self.setup_append_data(time_array)
-        self.data.to_csv(index=False, header=True)
+        if newfile and os.path.isfile(filename):
+            os.remove(self.autolog_filename)
+        if self.autolog_filetype in ["h5", "hdf5"]:
+            self.autolog_file_object = h5py.File(filename, mode="a")
+        elif self.autolog_filetype == "csv":
+            self.autolog_file_object = open(filename, "a")
+            self.data.to_csv(self.autolog_file_object, header=True, index=False)
         
     def do_autolog(self):
         """Automatically log data to disk, snipping off the oldest data
         from the arrays in the data dict."""
-        data = pd.DataFrame()
-        data = self.data.iloc[:self.autolog_buffer_len]
-        self.data = self.data.iloc[self.autolog_buffer_len:]
+        data = self.newdf
         if self.autolog_filetype == "csv":
-            data.to_csv(self.autolog_filename, mode="a", index=False)
+            data.to_csv(self.autolog_file_object, mode="a", index=False, 
+                        header=False)
+        elif self.autolog_filetype in ["h5", "hdf5"]:
+            data.to_hdf(self.autolog_filename, mode="a", append=True,
+                        format="t", key="data", index=False)
 
     def every_n_callback(self):
         self.read()
         
     def setup_append_data(self, time_array=True):
         self.append_data = True
-        self.create_data_dict(time_array)
+        self.create_dataframe(time_array)
         self.auto_register_every_n_samples_event()
         self.auto_register_done_event()
+    
+    def autotrim_dataframe(self):
+        """Trims off the oldest rows in the DataFrame to keep it smaller
+        than `append_data_limit`."""
+        current_size = np.size(self.data)
+        if current_size > self.append_data_limit:
+            rows, columns = np.shape(self.data)
+            newrows = self.append_data_limit/columns
+            self.data = self.data.iloc[newrows:]
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
@@ -194,6 +214,8 @@ class Task(PyDaqMxTask):
 
     def stop(self):
         daqmx.StopTask(self.handle)
+        if self.autolog:
+            self.autolog_file_object.close()
         
     def clear(self):
         daqmx.ClearTask(self.handle)
@@ -214,7 +236,7 @@ def test_task():
     task.clear()
     plt.plot(task.data["time"], task.data[c.name])
     
-def test_task_autologging():
+def test_task_autologging(filetype=".csv"):
     import time
     import matplotlib.pyplot as plt
     task = Task()
@@ -222,7 +244,7 @@ def test_task_autologging():
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input 0"
     task.add_channel(c)
-    task.setup_autologging("test.csv")
+    task.setup_autologging("test" + filetype, newfile=True)
     task.start()
     time.sleep(3)
     task.stop()
