@@ -37,7 +37,7 @@ class Task(PyDaqMxTask):
         self.task_type = ""
         self.append_data = False
         self.autolog = False
-        self.append_data_limit = 10000 # Maximum number of datapoints to keep
+        self.autotrim_limit = 100000 # Maximum number of samples to keep
         self.autotrim = False # Only applicable if appending data
         
     def create_channel(self):
@@ -124,6 +124,7 @@ class Task(PyDaqMxTask):
                     
     def auto_register_every_n_samples_event(self):
         """Will call a function every n samples."""
+        nchan = len(self.channels)
         self.AutoRegisterEveryNSamplesEvent(daqmx.Val_Acquired_Into_Buffer,
                                             self.samples_per_channel,0)
                                             
@@ -184,19 +185,23 @@ class Task(PyDaqMxTask):
     def every_n_callback(self):
         self.read()
         
-    def setup_append_data(self, time_array=True):
+    def setup_append_data(self, time_array=True, autotrim=False, 
+                          autotrim_limit=None):
         self.append_data = True
         self.create_dataframe(time_array)
+        self.autotrim = autotrim
+        if autotrim_limit:
+            self.autotrim_limit = autotrim_limit
         self.auto_register_every_n_samples_event()
         self.auto_register_done_event()
     
     def autotrim_dataframe(self):
         """Trims off the oldest rows in the DataFrame to keep it smaller
-        than `append_data_limit`."""
+        than `autotrim_limit`."""
         current_size = np.size(self.data)
-        if current_size > self.append_data_limit:
+        if current_size > self.autotrim_limit:
             rows, columns = np.shape(self.data)
-            newrows = self.append_data_limit/columns
+            newrows = self.autotrim_limit//columns
             self.data = self.data.iloc[newrows:]
                                
     def check(self, verbose=False):
@@ -228,7 +233,7 @@ class Task(PyDaqMxTask):
         daqmx.ClearTask(self.handle)
 
 
-def test_task():
+def test_task(duration=3):
     import time
     import matplotlib.pyplot as plt
     task = Task()
@@ -236,28 +241,66 @@ def test_task():
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input 0"
     task.add_channel(c)
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
+    c2.physical_channel = "Dev1/ai1"
+    c2.name = "analog input 1"
+    task.add_channel(c2)
     task.setup_append_data()
-    task.start()
-    time.sleep(3)
-    task.stop()
-    task.clear()
-    plt.plot(task.data["time"], task.data[c.name])
-    
-def test_task_autologging(filetype=".csv", duration=3):
-    import time
-    import matplotlib.pyplot as plt
-    task = Task()
-    c = daqmx.channels.AnalogInputVoltageChannel()
-    c.physical_channel = "Dev1/ai0"
-    c.name = "analog input 0"
-    task.add_channel(c)
-    task.setup_autologging("test" + filetype, newfile=True)
-    print("Testing autologging to", filetype)
     task.start()
     time.sleep(duration)
     task.stop()
     task.clear()
-
+    plt.plot(task.data["time"], task.data[c.name])
+    plt.plot(task.data["time"], task.data[c2.name])
+    
+def test_task_autologging(filetype=".csv", duration=3):
+    import time
+    import matplotlib.pyplot as plt
+    from pxl import timeseries
+    print("Testing autologging to", filetype)
+    task = Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
+    c.physical_channel = "Dev1/ai0"
+    c.name = "analog input 0"
+    task.add_channel(c)
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
+    c2.physical_channel = "Dev1/ai1"
+    c2.name = "analog input 1"
+    task.add_channel(c2)
+    task.setup_autologging("test" + filetype, newfile=True)
+    task.start()
+    time.sleep(duration)
+    task.stop()
+    task.clear()
+    if filetype == ".csv":
+        data = pd.read_csv("test" + filetype)
+    else:
+        data = timeseries.loadhdf("test" + filetype)
+    plt.plot(data["time"], data["analog input 0"])
+    plt.plot(data["time"], data["analog input 1"])
+    
+def test_task_autotrim(duration=5):
+    import time
+    import matplotlib.pyplot as plt
+    task = Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
+    c.physical_channel = "Dev1/ai0"
+    c.name = "analog input 0"
+    task.add_channel(c)
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
+    c2.physical_channel = "Dev1/ai1"
+    c2.name = "analog input 1"
+    task.add_channel(c2)
+    task.setup_append_data(autotrim=True, autotrim_limit=400)
+    task.start()
+    time.sleep(duration)
+    task.stop()
+    task.clear()
+    plt.plot(task.data["time"], task.data[c.name])
+    plt.plot(task.data["time"], task.data[c2.name])
+    print("Test successful:", np.size(task.data) < task.autotrim_limit)
+    assert np.size(task.data) < task.autotrim_limit
+    
 class GlobalVirtualAnalogInput(object):
     """Create an analog input task based on a global virtual channel."""
     def __init__(self, global_channels):
