@@ -169,24 +169,18 @@ class Task(PyDaqMxTask):
 
 def test_task():
     import time
+    import matplotlib.pyplot as plt
     task = Task()
     c = daqmx.channels.AnalogInputChannel()
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input"
     task.add_channel(c)
-    task.check(verbose=True)
     task.setup_streaming()
     task.start()
-#    t0 = time.time()
-#    while time.time() - t0 < 3:
-#        time.sleep(1/task.sample_rate*10)
-#        task.read()
-#        print(task.samples_per_channel_received)
-#        print(task.data)
-    input("Acquiring samples continuously. Press Enter to interrupt\n")
+    time.sleep(3)
     task.stop()
     task.clear()
-    print(task.data_cache)
+    plt.plot(task.data_cache[c.name])
 
 
 class GlobalVirtualAnalogInput(object):
