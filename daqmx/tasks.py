@@ -11,6 +11,7 @@ import daqmx
 import numpy as np
 from daqmx import channels
 from PyDAQmx import Task as PyDaqMxTask
+import threading
 
 class Task(PyDaqMxTask):
     """DAQmx class object. Note that counter input tasks can only have one
@@ -32,6 +33,7 @@ class Task(PyDaqMxTask):
         self.sample_clock_configured = False
         self.fillmode = "group by channel"
         self.task_type = ""
+        self.append_data = False
         
     def create_channel(self):
         """Creates and returns a channel object."""
@@ -49,7 +51,7 @@ class Task(PyDaqMxTask):
         cust_scale_name = channel.custom_scale_name
         if cust_scale_name:
             units = daqmx.Val_FromCustomScale
-        if channel.channel_type.lower() == "analog input":
+        if channel.channel_type.lower() == "analog input voltage":
             daqmx.CreateAIVoltageChan(self.handle, phys_chan, name, term_conf,
                                       minval, maxval, units, cust_scale_name)
             self.task_type = "analog input"
@@ -79,6 +81,12 @@ class Task(PyDaqMxTask):
                                sample_mode, 
                                self.samples_per_channel)
         self.sample_clock_configured = True
+    
+    def create_data_dict(self, time_array=True):
+        self.data_dict = {}
+        self.time_array = time_array
+        for channel in self.channels:
+            self.data_dict[channel.name] = np.array([])
         
     def read(self):
         """Reads from the channels in the task."""
@@ -88,6 +96,13 @@ class Task(PyDaqMxTask):
             self.data, self.samples_per_channel_received = daqmx.ReadAnalogF64(
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
+        if self.append_data:
+            for n, channel in enumerate(self.channels):
+                self.data_dict[channel.name] = np.append(self.data_dict[channel.name],
+                                                         self.data[:,n], axis=0)
+            if self.time_array:
+                length = len(self.data_dict[self.channels[0].name])
+                self.data_dict["time"] = np.arange(length)/self.sample_rate
         return self.data, self.samples_per_channel_received
                     
     def auto_register_every_n_samples_event(self):
@@ -114,28 +129,20 @@ class Task(PyDaqMxTask):
         print("Status", status.value)
         return 0 # The function should return an integer
         
-    def setup_autologging(self, filename):
+    def setup_logging(self, filename, time_array=True):
         """Sets up channel to automatically stream data to file---either
         raw text, CSV, or HDF5, depending on filename"""
-        
-    def setup_streaming(self, time_array=False):
-        """Sets up callbacks such that data received is appended to dictionary
-        supplied. `datadict` will have keys corresponding to channel names."""
-        self.data_cache = {}
-        self.time_array = time_array
-        for channel in self.channels:
-            self.data_cache[channel.name] = np.array([])
-        self.auto_register_every_n_samples_event()
-        self.auto_register_done_event()
-            
+        self.setup_append_data(time_array)
+        self.logthread = None
+
     def every_n_callback(self):
         self.read()
-        for n, channel in enumerate(self.channels):
-            self.data_cache[channel.name] = np.append(self.data_cache[channel.name],
-                                                      self.data[:,n], axis=0)
-        if self.time_array:
-            self.data_cache["time"] = np.arange(len(self.data_cache[self.data_cache.keys()[0]]), 
-                                                dtype=float)/self.sample_rate
+        
+    def setup_append_data(self, time_array=True):
+        self.append_data = True
+        self.create_data_dict(time_array)
+        self.auto_register_every_n_samples_event()
+        self.auto_register_done_event()
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
@@ -153,12 +160,9 @@ class Task(PyDaqMxTask):
         return passed
         
     def start(self):
-        if self.check():
-            if not self.sample_clock_configured:
-                self.configure_sample_clock()
-            daqmx.StartTask(self.handle)
-        else:
-            raise RuntimeError("Cannot start task because it has mixed channel types")
+        if not self.sample_clock_configured:
+            self.configure_sample_clock()
+        daqmx.StartTask(self.handle)
 
     def stop(self):
         daqmx.StopTask(self.handle)
@@ -171,16 +175,16 @@ def test_task():
     import time
     import matplotlib.pyplot as plt
     task = Task()
-    c = daqmx.channels.AnalogInputChannel()
+    c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
-    c.name = "analog input"
+    c.name = "analog input 0"
     task.add_channel(c)
-    task.setup_streaming()
+    task.setup_append_data()
     task.start()
     time.sleep(3)
     task.stop()
     task.clear()
-    plt.plot(task.data_cache[c.name])
+    plt.plot(task.data_dict["time"], task.data_dict[c.name])
 
 
 class GlobalVirtualAnalogInput(object):
