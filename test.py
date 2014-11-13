@@ -9,4 +9,4 @@ import daqmx
 
 if __name__ == "__main__":
 #    daqmx.tests.test_task()
-    daqmx.tasks.test_task_autologging(".csv")
+    daqmx.tasks.test_task_autologging(".h5", duration=30)

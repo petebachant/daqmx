@@ -171,8 +171,15 @@ class Task(PyDaqMxTask):
             data.to_csv(self.autolog_file_object, mode="a", index=False, 
                         header=False)
         elif self.autolog_filetype in ["h5", "hdf5"]:
-            data.to_hdf(self.autolog_filename, mode="a", append=True,
-                        format="t", key="data", index=False)
+            f = self.autolog_file_object
+            for key, value in data.items():
+                try:
+                    oldval = f["data/" + key]
+                    newval = np.append(oldval, value)
+                    del f["data/" + key]
+                except KeyError:
+                    newval = value
+                f["data/" + key] = newval
 
     def every_n_callback(self):
         self.read()
@@ -236,7 +243,7 @@ def test_task():
     task.clear()
     plt.plot(task.data["time"], task.data[c.name])
     
-def test_task_autologging(filetype=".csv"):
+def test_task_autologging(filetype=".csv", duration=3):
     import time
     import matplotlib.pyplot as plt
     task = Task()
@@ -245,8 +252,9 @@ def test_task_autologging(filetype=".csv"):
     c.name = "analog input 0"
     task.add_channel(c)
     task.setup_autologging("test" + filetype, newfile=True)
+    print("Testing autologging to", filetype)
     task.start()
-    time.sleep(3)
+    time.sleep(duration)
     task.stop()
     task.clear()
 
