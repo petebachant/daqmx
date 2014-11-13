@@ -10,13 +10,17 @@ from __future__ import print_function, division
 import daqmx
 import numpy as np
 from daqmx import channels
+from PyDAQmx import Task as PyDaqMxTask
 
-class Task(object):
+class Task(PyDaqMxTask):
     """DAQmx class object. Note that counter input tasks can only have one
     channel per task."""
     def __init__(self, name=""):
+        PyDaqMxTask.__init__(self)
         self.name = name
         self.handle = daqmx.TaskHandle()
+        self.TaskHandle = self.handle
+        self.taskHandle = self.handle
         daqmx.CreateTask(name.encode(), self.handle)
         self.sample_rate = 100.0
         self.timeout = 10.0 
@@ -86,15 +90,29 @@ class Task(object):
                     fillmode, array_size_samps, len(self.channels))
         return self.data, self.samples_per_channel_received
                     
-    def register_every_n_samples_event(self):
+    def auto_register_every_n_samples_event(self):
         """Will call a function every n samples."""
-
+        self.AutoRegisterEveryNSamplesEvent(daqmx.Val_Acquired_Into_Buffer,
+                                            self.samples_per_channel,0)
+                                            
+    def auto_register_done_event(self):
+        self.AutoRegisterDoneEvent(0)
         
     def register_done_event(self):
         """Automatically registers done event similar to PyDAQmx."""
+        def DoneCallback_py(taskHandle, status, callbackData_ptr):
+            print("Status", status.value)
+            return 0
+        DoneCallback = daqmx.DoneEventCallbackPtr(DoneCallback_py)
+        daqmx.RegisterDoneEvent(self.handle, 0, DoneCallback, None)
         
-    def every_n_callback(self):
-        self.read()
+    def EveryNCallback(self):
+        self.every_n_callback()
+        return 0 # The function should return an integer
+
+    def DoneCallback(self, status):
+        print("Status", status.value)
+        return 0 # The function should return an integer
         
     def setup_autologging(self, filename):
         """Sets up channel to automatically stream data to file---either
@@ -104,40 +122,20 @@ class Task(object):
         """Sets up callbacks such that data received is appended to dictionary
         supplied. `datadict` will have keys corresponding to channel names."""
         self.data_cache = {}
+        self.time_array = time_array
         for channel in self.channels:
             self.data_cache[channel.name] = np.array([])
-        datadict = self.data_cache
-        class mylist(list):
-            pass
-        data = mylist()
-        id_data = daqmx.create_callbackdata_id(data)
-        nsamps = self.samples_per_channel
-        def EveryNCallback_py(taskHandle, everyNsamplesEventType, nSamples, 
-                              callbackData_ptr):
-            """Function called every N samples"""
-            callbackdata = daqmx.get_callbackdata_from_id(callbackData_ptr)
-#            data, npoints = self.read()
-            data, npoints = daqmx.ReadAnalogF64(taskHandle, nsamps, 
-                    10.0, daqmx.Val_GroupByChannel, nsamps, 
-                    len(self.channels))
-            callbackdata.extend(data.tolist())
-            for n, channel in enumerate(self.channels):
-                datadict[channel.name] = np.append(datadict[channel.name],
-                                                   data[:,n], axis=0)
-            if time_array:
-                datadict["time"] = np.arange(len(datadict[datadict.keys()[0]]), 
-                                             dtype=float)/self.sample_rate                                                
-            return 0 # The function should return an integer
-        # Convert the python callback function to a CFunction
-        EveryNCallback = daqmx.EveryNSamplesEventCallbackPtr(EveryNCallback_py)
-        daqmx.RegisterEveryNSamplesEvent(self.handle, 
-                daqmx.Val_Acquired_Into_Buffer, self.samples_per_channel, 0, 
-                EveryNCallback, id_data)    
-        def DoneCallback_py(taskHandle, status, callbackData_ptr):
-            print("Status", status.value)
-            return 0
-        DoneCallback = daqmx.DoneEventCallbackPtr(DoneCallback_py)
-        daqmx.RegisterDoneEvent(self.handle, 0, DoneCallback, None)
+        self.auto_register_every_n_samples_event()
+        self.auto_register_done_event()
+            
+    def every_n_callback(self):
+        self.read()
+        for n, channel in enumerate(self.channels):
+            self.data_cache[channel.name] = np.append(self.data_cache[channel.name],
+                                                      self.data[:,n], axis=0)
+        if self.time_array:
+            self.data_cache["time"] = np.arange(len(self.data_cache[self.data_cache.keys()[0]]), 
+                                                dtype=float)/self.sample_rate
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
@@ -179,12 +177,13 @@ def test_task():
     task.check(verbose=True)
     task.setup_streaming()
     task.start()
-    t0 = time.time()
-    while time.time() - t0 < 3:
-        time.sleep(1/task.sample_rate*10)
+#    t0 = time.time()
+#    while time.time() - t0 < 3:
+#        time.sleep(1/task.sample_rate*10)
 #        task.read()
 #        print(task.samples_per_channel_received)
 #        print(task.data)
+    input("Acquiring samples continuously. Press Enter to interrupt\n")
     task.stop()
     task.clear()
     print(task.data_cache)
