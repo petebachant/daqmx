@@ -84,9 +84,60 @@ class Task(object):
             self.data, self.samples_per_channel_received = daqmx.ReadAnalogF64(
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
+        return self.data, self.samples_per_channel_received
                     
-    def setup_every_n_samples_event(func_to_call):
+    def register_every_n_samples_event(self):
         """Will call a function every n samples."""
+
+        
+    def register_done_event(self):
+        """Automatically registers done event similar to PyDAQmx."""
+        
+    def every_n_callback(self):
+        self.read()
+        
+    def setup_autologging(self, filename):
+        """Sets up channel to automatically stream data to file---either
+        raw text, CSV, or HDF5, depending on filename"""
+        
+    def setup_streaming(self, time_array=False):
+        """Sets up callbacks such that data received is appended to dictionary
+        supplied. `datadict` will have keys corresponding to channel names."""
+        self.data_cache = {}
+        for channel in self.channels:
+            self.data_cache[channel.name] = np.array([])
+        datadict = self.data_cache
+        class mylist(list):
+            pass
+        data = mylist()
+        id_data = daqmx.create_callbackdata_id(data)
+        nsamps = self.samples_per_channel
+        def EveryNCallback_py(taskHandle, everyNsamplesEventType, nSamples, 
+                              callbackData_ptr):
+            """Function called every N samples"""
+            callbackdata = daqmx.get_callbackdata_from_id(callbackData_ptr)
+#            data, npoints = self.read()
+            data, npoints = daqmx.ReadAnalogF64(taskHandle, nsamps, 
+                    10.0, daqmx.Val_GroupByChannel, nsamps, 
+                    len(self.channels))
+            callbackdata.extend(data.tolist())
+            for n, channel in enumerate(self.channels):
+                datadict[channel.name] = np.append(datadict[channel.name],
+                                                   data[:,n], axis=0)
+            if time_array:
+                datadict["time"] = np.arange(len(datadict[datadict.keys()[0]]), 
+                                             dtype=float)/self.sample_rate                                                
+            return 0 # The function should return an integer
+        # Convert the python callback function to a CFunction
+        EveryNCallback = daqmx.EveryNSamplesEventCallbackPtr(EveryNCallback_py)
+        daqmx.RegisterEveryNSamplesEvent(self.handle, 
+                daqmx.Val_Acquired_Into_Buffer, self.samples_per_channel, 0, 
+                EveryNCallback, id_data)    
+        def DoneCallback_py(taskHandle, status, callbackData_ptr):
+            print("Status", status.value)
+            return 0
+        DoneCallback = daqmx.DoneEventCallbackPtr(DoneCallback_py)
+        daqmx.RegisterDoneEvent(self.handle, 0, DoneCallback, None)
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
@@ -123,17 +174,20 @@ def test_task():
     task = Task()
     c = daqmx.channels.AnalogInputChannel()
     c.physical_channel = "Dev1/ai0"
+    c.name = "analog input"
     task.add_channel(c)
     task.check(verbose=True)
+    task.setup_streaming()
     task.start()
     t0 = time.time()
     while time.time() - t0 < 3:
         time.sleep(1/task.sample_rate*10)
-        task.read()
-        print(task.samples_per_channel_received)
-        print(task.data)
+#        task.read()
+#        print(task.samples_per_channel_received)
+#        print(task.data)
     task.stop()
     task.clear()
+    print(task.data_cache)
 
 
 class GlobalVirtualAnalogInput(object):
