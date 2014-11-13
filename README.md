@@ -28,7 +28,7 @@ python setup.py install
 
 ## Usage example
 
-```
+```python
 import time
 import daqmx
 import matplotlib.pyplot as plt
@@ -54,6 +54,4 @@ task.clear()
 # Plot the resulting data
 plt.plot(task.data["time"], task.data["analog input 0"])
 plt.show()
-
 ```
-
