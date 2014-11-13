@@ -84,6 +84,9 @@ class Task(object):
             self.data, self.samples_per_channel_received = daqmx.ReadAnalogF64(
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
+                    
+    def setup_every_n_samples_event(func_to_call):
+        """Will call a function every n samples."""
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
