@@ -11,7 +11,8 @@ import daqmx
 import numpy as np
 from daqmx import channels
 from PyDAQmx import Task as PyDaqMxTask
-import threading
+from pxl import timeseries
+import pandas as pd
 
 class Task(PyDaqMxTask):
     """DAQmx class object. Note that counter input tasks can only have one
@@ -34,6 +35,7 @@ class Task(PyDaqMxTask):
         self.fillmode = "group by channel"
         self.task_type = ""
         self.append_data = False
+        self.autolog = False
         
     def create_channel(self):
         """Creates and returns a channel object."""
@@ -83,12 +85,12 @@ class Task(PyDaqMxTask):
         self.sample_clock_configured = True
     
     def create_data_dict(self, time_array=True):
-        self.data = {}
+        self.data = pd.DataFrame()
         self.time_array = time_array
-        for channel in self.channels:
-            self.data[channel.name] = np.array([])
         if self.time_array:
             self.data["time"] = np.array([])
+        for channel in self.channels:
+            self.data[channel.name] = np.array([])
         
     def read(self):
         """Reads from the channels in the task."""
@@ -99,17 +101,22 @@ class Task(PyDaqMxTask):
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
         if self.append_data:
-            for n, channel in enumerate(self.channels):
-                self.data[channel.name] = np.append(self.data[channel.name],
-                                                    self.newdata[:,n], axis=0)
+            newdf = pd.DataFrame()
             if self.time_array:
                 newtime = np.arange(self.samples_per_channel_received + 1)/self.sample_rate
                 if len(self.data["time"]) == 0:
-                    self.data["time"] = newtime[:-1]
+                    newdf["time"] = newtime[:-1]
                 else:
-                    last_time = self.data["time"][-1]
+                    last_time = self.data["time"].values[-1]
                     newtime += last_time
-                    self.data["time"] = np.append(self.data["time"], newtime[1:])
+                    newdf["time"] = newtime[1:]
+            for n, channel in enumerate(self.channels):
+                newdf[channel.name] = self.newdata[:,n]
+            self.data = self.data.append(newdf, ignore_index=False)
+            datalen = len(self.data)
+            if self.autolog and datalen > self.autolog_buffer_len:
+                self.do_autolog()
+                
         return self.newdata, self.samples_per_channel_received
                     
     def auto_register_every_n_samples_event(self):
@@ -136,11 +143,25 @@ class Task(PyDaqMxTask):
         print("Status", status.value)
         return 0 # The function should return an integer
         
-    def setup_logging(self, filename, time_array=True):
+    def setup_autologging(self, filename, buffer_len=200, time_array=True):
         """Sets up channel to automatically stream data to file---either
         raw text, CSV, or HDF5, depending on filename"""
-        self.setup_append_data(time_array)
-        self.logthread = None
+        self.autolog_buffer_len = buffer_len
+        self.autolog = True
+        self.autolog_filename = filename
+        self.autolog_filetype = self.autolog_filename.split(".")[-1].lower() 
+        if not self.append_data:
+            self.setup_append_data(time_array)
+        self.data.to_csv(index=False, header=True)
+        
+    def do_autolog(self):
+        """Automatically log data to disk, snipping off the oldest data
+        from the arrays in the data dict."""
+        data = pd.DataFrame()
+        data = self.data.iloc[:self.autolog_buffer_len]
+        self.data = self.data.iloc[self.autolog_buffer_len:]
+        if self.autolog_filetype == "csv":
+            data.to_csv(self.autolog_filename, mode="a", index=False)
 
     def every_n_callback(self):
         self.read()
@@ -191,10 +212,21 @@ def test_task():
     time.sleep(3)
     task.stop()
     task.clear()
-    print(len(task.data["time"]))
-    print(len(task.data[c.name]))
     plt.plot(task.data["time"], task.data[c.name])
-
+    
+def test_task_autologging():
+    import time
+    import matplotlib.pyplot as plt
+    task = Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
+    c.physical_channel = "Dev1/ai0"
+    c.name = "analog input 0"
+    task.add_channel(c)
+    task.setup_autologging("test.csv")
+    task.start()
+    time.sleep(3)
+    task.stop()
+    task.clear()
 
 class GlobalVirtualAnalogInput(object):
     """Create an analog input task based on a global virtual channel."""
