@@ -83,27 +83,34 @@ class Task(PyDaqMxTask):
         self.sample_clock_configured = True
     
     def create_data_dict(self, time_array=True):
-        self.data_dict = {}
+        self.data = {}
         self.time_array = time_array
         for channel in self.channels:
-            self.data_dict[channel.name] = np.array([])
+            self.data[channel.name] = np.array([])
+        if self.time_array:
+            self.data["time"] = np.array([])
         
     def read(self):
         """Reads from the channels in the task."""
         array_size_samps = self.sample_rate*self.samples_per_channel
         fillmode = daqmx.parameters[self.fillmode]
         if self.task_type == "analog input":
-            self.data, self.samples_per_channel_received = daqmx.ReadAnalogF64(
+            self.newdata, self.samples_per_channel_received = daqmx.ReadAnalogF64(
                     self.handle, self.samples_per_channel, self.timeout, 
                     fillmode, array_size_samps, len(self.channels))
         if self.append_data:
             for n, channel in enumerate(self.channels):
-                self.data_dict[channel.name] = np.append(self.data_dict[channel.name],
-                                                         self.data[:,n], axis=0)
+                self.data[channel.name] = np.append(self.data[channel.name],
+                                                    self.newdata[:,n], axis=0)
             if self.time_array:
-                length = len(self.data_dict[self.channels[0].name])
-                self.data_dict["time"] = np.arange(length)/self.sample_rate
-        return self.data, self.samples_per_channel_received
+                newtime = np.arange(self.samples_per_channel_received + 1)/self.sample_rate
+                if len(self.data["time"]) == 0:
+                    self.data["time"] = newtime[:-1]
+                else:
+                    last_time = self.data["time"][-1]
+                    newtime += last_time
+                    self.data["time"] = np.append(self.data["time"], newtime[1:])
+        return self.newdata, self.samples_per_channel_received
                     
     def auto_register_every_n_samples_event(self):
         """Will call a function every n samples."""
@@ -184,7 +191,9 @@ def test_task():
     time.sleep(3)
     task.stop()
     task.clear()
-    plt.plot(task.data_dict["time"], task.data_dict[c.name])
+    print(len(task.data["time"]))
+    print(len(task.data[c.name]))
+    plt.plot(task.data["time"], task.data[c.name])
 
 
 class GlobalVirtualAnalogInput(object):
@@ -235,7 +244,7 @@ class GlobalVirtualAnalogInput(object):
                     len(self.analogchans))
             callbackdata.extend(data.tolist())
             
-            for n in xrange(len(self.global_channels)):
+            for n in range(len(self.global_channels)):
                 self.data[self.global_channels[n]] = np.append(
                         self.data[self.global_channels[n]], data[:,n], axis=0)
             return 0 # The function should return an integer
