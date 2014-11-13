@@ -7,9 +7,8 @@ Created on Wed Nov 12 15:59:12 2014
 
 class Channel(object):
     """DAQmx channel object. Valid channel types are:
-      * analog input
-      * analog output
-      * global virtual
+      * analog input voltage
+      * analog output voltage
       * digital input
       * digital output
       * counter input"""
@@ -17,7 +16,6 @@ class Channel(object):
         self.channel_type = ""
         self.name = ""
         self.physical_channel = ""
-        self.is_global_virtual = False
         self.terminal_config = "differential"
         self.minval = -10.0
         self.maxval = 10.0
@@ -25,11 +23,24 @@ class Channel(object):
         self.custom_scale_name = None
 
 
-class AnalogInputChannel(Channel):
-    """Analog input channel object."""
+class AnalogInputVoltageChannel(Channel):
+    """Analog input voltage channel object."""
     def __init__(self):
         Channel.__init__(self)
-        self.channel_type = "analog input"
+        self.channel_type = "analog input voltage"
+
+        
+class AnalogInputBridgeChannel(Channel):
+    def __init__(self):
+        Channel.__init__(self)
+        self.channel_type = "analog input bridge"
+
+
+class GlobalVirtualChannel(Channel):
+    """Global Virtual Channel object."""
+    def __init__(self):
+        Channel.__init__(self)
+        self.is_global_virtual = True
         
         
 def test_channel():
