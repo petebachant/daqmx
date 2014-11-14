@@ -234,10 +234,11 @@ class Task(PyDaqMxTask):
         
 
 class SingleChannelAnalogInputVoltageTask(Task):
-    def __init__(self, phys_chan):
+    def __init__(self, name, phys_chan):
         Task.__init__(self)
         channel = channels.AnalogInputVoltageChannel()
         channel.physical_channel = phys_chan
+        channel.name = name
         self.add_channel(channel)
 
 
