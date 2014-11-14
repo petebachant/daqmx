@@ -231,6 +231,14 @@ class Task(PyDaqMxTask):
         
     def clear(self):
         daqmx.ClearTask(self.handle)
+        
+
+class SingleChannelAnalogInputVoltageTask(Task):
+    def __init__(self, phys_chan):
+        Task.__init__(self)
+        channel = channels.AnalogInputVoltageChannel()
+        channel.physical_channel = phys_chan
+        self.add_channel(channel)
 
 
 def test_task(duration=3):
