@@ -85,8 +85,19 @@ def CreateAIVoltageChan(taskhandle, phys_chan, name_to_assign, terminalconfig,
         int32(terminalconfig), double(minval), double(maxval), int32(units), 
         custom_scale_name)
     ErrorHandling(rv, fatalerror)
+
+
+def CreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, minval, 
+        maxval, units, bridge_config, voltage_exc_source, voltage_exc_val, 
+        nominal_bridge_resistance, custom_scale_name=None):
+    """Creates an analog input bridge channel."""
+    rv = dmx.DAQmxCreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, 
+            double(minval), double(maxval), int32(units), int32(bridge_config), 
+            int32(voltage_exc_source), double(voltage_exc_val), 
+            double(nominal_bridge_resistance), custom_scale_name);
+    ErrorHandling(rv)
     
-    
+
 def CreateAOVoltageChan(taskHandle, physicalChannel, nameToAssignToChannel, 
         minVal, maxVal, units, customScaleName, fatalerror=True):
     """"Creates an analog voltage output channel."""
@@ -433,6 +444,11 @@ Val_Radians = 10273
 Val_Ticks = 10304
 Val_VoltsPerVolt = 15896
 Val_mVoltsPerVolt = 15897
+Val_FullBridge = 10182
+Val_HalfBridge = 10187
+Val_QuarterBridge = 10270
+Val_Internal = 10200
+Val_External = 10167
 
 # Channel attribute constants
 AI_Max = 0x17DD # Specifies the maximum value you expect to measure. This value is in the units you specify with a units property. When you query this property, it returns the coerced maximum value that the device can measure with the current settings.
@@ -456,8 +472,18 @@ parameters = {"rising" : Val_Rising,
               "continuous samples" : Val_ContSamps,
               "differential" : Val_Diff,
               "volts" : Val_Volts,
+              "V" : Val_Volts,
               "from custom scale" : Val_FromCustomScale,
-              "group by channel" : Val_GroupByChannel}
+              "group by channel" : Val_GroupByChannel,
+              "V/V" : Val_VoltsPerVolt,
+              "volts per volt" : Val_VoltsPerVolt,
+              "mV/V" : Val_mVoltsPerVolt,
+              "millivolts per volt" : Val_mVoltsPerVolt,
+              "full bridge" : Val_FullBridge,
+              "half bridge" : Val_HalfBridge,
+              "quarter bridge" : Val_QuarterBridge,
+              "internal" : Val_Internal,
+              "external" : Val_External}
 
     
 if __name__ == "__main__":

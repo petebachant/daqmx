@@ -60,6 +60,16 @@ class Task(PyDaqMxTask):
             daqmx.CreateAIVoltageChan(self.handle, phys_chan, name, term_conf,
                                       minval, maxval, units, cust_scale_name)
             self.task_type = "analog input"
+        elif channel.channel_type.lower() == "analog input bridge":
+            bridge_config = daqmx.parameters[channel.bridge_config]
+            voltage_exc_source = daqmx.parameters[channel.voltage_exc_source]
+            voltage_exc_value = channel.voltage_exc_value
+            nominal_bridge_resistance = channel.nominal_bridge_resistance
+            daqmx.CreateAIBridgeChan(self.handle, phys_chan, name, minval,
+                                     maxval, units, bridge_config, voltage_exc_source,
+                                     voltage_exc_value, nominal_bridge_resistance,
+                                     cust_scale_name)
+            self.task_type = "analog input"
         
     def configure_sample_clock(self, sample_clock_source=None,
                                sample_rate=None,
