@@ -7,4 +7,4 @@ Created on Wed Nov 12 16:30:15 2014
 
 import daqmx
 
-from daqmx.tasks import test_task
+from .tasks import test_task

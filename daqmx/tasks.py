@@ -9,7 +9,7 @@ Create objects for DAQmx tasks
 from __future__ import print_function, division
 import daqmx
 import numpy as np
-from daqmx import channels
+from . import channels
 from PyDAQmx import Task as PyDaqMxTask
 import pandas as pd
 import os

@@ -5,5 +5,5 @@ Created on Sun Aug 04 08:44:14 2013
 @author: Pete
 """
 
-from daqmx.core import *
-from daqmx import tasks, channels, tests, threads
+from .core import *
+from . import tasks, channels
