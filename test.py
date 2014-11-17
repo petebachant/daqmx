@@ -31,10 +31,26 @@ def test_analog_input_bridge(duration=3):
     task.stop()
     task.clear()
     plt.plot(task.data["time"], task.data["bridge"])
+    
+def test_global_virtual_channel():
+    th = daqmx.TaskHandle()
+    daqmx.CreateTask("", th)
+    daqmx.AddGlobalChansToTask(th, "drag_left")
+    daqmx.ClearTask(th)
+    
+def test_get_sys_global_channels():
+    print(daqmx.GetSysGlobalChans())
+    
+def test_get_dev_ai_phys_channels():
+    print(daqmx.GetDevAIPhysicalChans("Dev1"))
+    
 
 if __name__ == "__main__":
 #    daqmx.tests.test_task()
 #    daqmx.tasks.test_task_autologging(".csv", duration=5)
 #    daqmx.tasks.test_task_autotrim()
 #    test_single_channel_analog_input_task()
-    test_analog_input_bridge()
+#    test_analog_input_bridge()
+#    test_global_virtual_channel()
+    test_get_sys_global_channels()
+    test_get_dev_ai_phys_channels()

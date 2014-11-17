@@ -73,7 +73,9 @@ taskhandle: The task handle to which to add the channels from MAX. \n
 channelnames: List containing channel names
     """
     if type(channelnames) == list:
-        channelnames = ", ".join(channelnames)
+        channelnames = ", ".join(channelnames.encode("ascii"))
+    if type(channelnames) == str:
+        channelnames = channelnames.encode("ascii")
     rv = dmx.DAQmxAddGlobalChansToTask(taskhandle, channelnames)
     ErrorHandling(rv, fatalerror)
     
@@ -81,6 +83,8 @@ channelnames: List containing channel names
 def CreateAIVoltageChan(taskhandle, phys_chan, name_to_assign, terminalconfig,
         minval, maxval, units, custom_scale_name=None, fatalerror=True):
     """Creates an analog voltage input channel"""
+    if type(phys_chan) == str:
+        phys_chan = phys_chan.encode()
     rv = dmx.DAQmxCreateAIVoltageChan(taskhandle, phys_chan, name_to_assign, 
         int32(terminalconfig), double(minval), double(maxval), int32(units), 
         custom_scale_name)
@@ -91,6 +95,8 @@ def CreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, minval,
         maxval, units, bridge_config, voltage_exc_source, voltage_exc_val, 
         nominal_bridge_resistance, custom_scale_name=None):
     """Creates an analog input bridge channel."""
+    if type(phys_chan) == str:
+        phys_chan = phys_chan.encode()
     rv = dmx.DAQmxCreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, 
             double(minval), double(maxval), int32(units), int32(bridge_config), 
             int32(voltage_exc_source), double(voltage_exc_val), 
@@ -101,6 +107,8 @@ def CreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, minval,
 def CreateAOVoltageChan(taskHandle, physicalChannel, nameToAssignToChannel, 
         minVal, maxVal, units, customScaleName, fatalerror=True):
     """"Creates an analog voltage output channel."""
+    if type(physicalChannel) == str:
+        physicalChannel = physicalChannel.encode()
     rv = dmx.DAQmxCreateAOVoltageChan(taskHandle, physicalChannel, 
         nameToAssignToChannel, double(minVal), double(maxVal), int32(units), 
         customScaleName)
@@ -118,10 +126,13 @@ def CreateDIChan(taskhandle, lines, nameToAssignToLines, linegrouping,
 def GetDevAIPhysicalChans(device, buffersize=512, fatalerror=False):
     """Get device analog input channels."""
     channels = ctypes.create_string_buffer(buffersize)
+    if type(device) == str:
+        device = device.encode()
     rv = dmx.DAQmxGetDevAIPhysicalChans(device, byref(channels), 
                                         uInt32(buffersize))
     ErrorHandling(rv, fatalerror)
-    return channels.value
+    chans = channels.value.decode()
+    return chans.split(", ")
     
     
 def GetSysGlobalChans(buffersize=512):
@@ -129,7 +140,10 @@ def GetSysGlobalChans(buffersize=512):
     channels = ctypes.create_string_buffer(buffersize)
     rv = dmx.DAQmxGetSysGlobalChans(byref(channels), uInt32(buffersize))
     ErrorHandling(rv, fatalerror=False)
-    return channels.value.split(", ")
+    channels = channels.value
+    if type(channels) == bytes:
+        channels = channels.decode()
+    return channels.split(", ")
     
 
 def StartTask(taskhandle, fatalerror=True):
