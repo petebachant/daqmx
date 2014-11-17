@@ -52,10 +52,13 @@ def CfgImplicitTiming(taskhandle, samplemode, sampsPerChanToAcquire,
                                     uInt64(sampsPerChanToAcquire))
     ErrorHandling(rv, fatalerror)
     
+
 def CfgDigEdgeStartTrig(taskHandle, triggerSource, triggerEdge):
     """Configures the task to start acquiring or generating samples on a 
     rising or falling edge of a digital signal."""
+    triggerSource = input_string(triggerSource)
     dmx.DAQmxCfgDigEdgeStartTrig(taskHandle, triggerSource, int32(triggerEdge))
+
 
 def AddGlobalChansToTask(taskhandle, channelnames, fatalerror=True):
     """
@@ -74,8 +77,7 @@ channelnames: List containing channel names
     """
     if type(channelnames) == list:
         channelnames = ", ".join(channelnames)
-    if type(channelnames) == str:
-        channelnames = channelnames.encode("ascii")
+    channelnames = input_string(channelnames)
     rv = dmx.DAQmxAddGlobalChansToTask(taskhandle, channelnames)
     ErrorHandling(rv, fatalerror)
     
@@ -140,9 +142,7 @@ def GetSysGlobalChans(buffersize=512):
     channels = ctypes.create_string_buffer(buffersize)
     rv = dmx.DAQmxGetSysGlobalChans(byref(channels), uInt32(buffersize))
     ErrorHandling(rv, fatalerror=False)
-    channels = channels.value
-    if type(channels) == bytes:
-        channels = channels.decode()
+    channels = output_string(channels.value)
     return channels.split(", ")
     
 
@@ -153,12 +153,13 @@ def StartTask(taskhandle, fatalerror=True):
 
 def CfgSampClkTiming(taskhandle, source, rate, active_edge, sample_mode,
                      samps_per_chan, fatalerror=True):
-    """Configures sample clock timing."""                     
+    """Configures sample clock timing."""
+    if type(source) == str:
+        source = source.encode()
     rv = dmx.DAQmxCfgSampClkTiming(taskhandle, source, double(rate), 
             int32(active_edge), int32(sample_mode), uInt64(samps_per_chan))
-                                   
-    ErrorHandling(rv, fatalerror)                               
-        
+    ErrorHandling(rv, fatalerror)
+
         
 def ReadAnalogF64(taskhandle, samps_per_chan, timeout, fillmode, 
                   array_size_samps, nchan, fatalerror=True):
@@ -232,9 +233,7 @@ def GetNthTaskDevice(taskhandle, index, buffersize):
     dmx.DAQmxGetNthTaskDevice(taskhandle, uInt32(index), byref(device), 
                               int32(buffersize))
     dev = device.value
-    if type(dev) == bytes:
-        dev = dev.decode()
-    return dev
+    return output_string(dev)
     
     
 def GetDevProductCategory(device):
@@ -281,44 +280,44 @@ def SetStartTrigType(taskhandle, trigtype):
 
 def SetDigEdgeStartTrigSrc(taskhandle, trigsrc):
     """Sets digital edge start trigger source."""
-    dmx.DAQmxSetDigEdgeStartTrigSrc(taskhandle, trigsrc)
+    dmx.DAQmxSetDigEdgeStartTrigSrc(taskhandle, input_string(trigsrc))
 
 
 def SetDigEdgeStartTrigEdge(taskhandle, trigedge):
     """Sets digital edge start trigger edge."""
-    dmx.DAQmxSetDigEdgeStartTrigEdge(taskhandle, trigedge)
+    dmx.DAQmxSetDigEdgeStartTrigEdge(taskhandle, input_string(trigedge))
 
 
 def GetScaleAttribute(scalename, attribute):
     """Gets a scale attribute. Need to get constants for attributes"""
     value = double()
-    dmx.DAQmxGetScaleAttribute(scalename, attribute, byref(value))
+    dmx.DAQmxGetScaleAttribute(input_string(scalename), attribute, byref(value))
     return value
 
 
 def GetScaleLinSlope(scalename):
     """Returns scale linear slope value."""
     linslope = double()
-    dmx.DAQmxGetScaleLinSlope(scalename, byref(linslope))
+    dmx.DAQmxGetScaleLinSlope(input_string(scalename), byref(linslope))
     return linslope.value
     
     
 def GetScaleLinYIntercept(scalename):
     """Returns scale linear y-intercept"""
     yint = double()
-    dmx.DAQmxGetScaleLinYIntercept(scalename, byref(yint))
+    dmx.DAQmxGetScaleLinYIntercept(input_string(scalename), byref(yint))
     return yint.value
     
     
 def GetScaleScaledUnits(scalename, buffersize=512):
     scaledunits = ctypes.create_string_buffer(buffersize)
-    dmx.DAQmxGetScaleScaledUnits(scalename, byref(scaledunits), buffersize)
-    return scaledunits.value
+    dmx.DAQmxGetScaleScaledUnits(input_string(scalename), byref(scaledunits), buffersize)
+    return output_string(scaledunits.value)
     
 
 def GetScalePreScaledUnits(scalename):
     unitint = uInt32()
-    dmx.DAQmxGetScalePreScaledUnits(scalename, byref(unitint))
+    dmx.DAQmxGetScalePreScaledUnits(input_string(scalename), byref(unitint))
     unitint = unitint.value
     if unitint in units:
         return units[unitint]
@@ -346,6 +345,7 @@ def GetCILinEncoderDisPerPulse(taskhandle, channel):
     dmx.DAQmxGetCILinEncoderDistPerPulse(taskhandle, channel, byref(data))
     return data.value
     
+
 def GetCILinEncoderUnits(taskhandle, channel):
     """Get linear encoder units."""
     data = int32()
@@ -358,26 +358,30 @@ def GetCILinEncoderUnits(taskhandle, channel):
 def GetAICustomScaleName(taskhandle, channel, buffersize=512):
     """Gets a custom scale name from an analog input task."""
     scalename = ctypes.create_string_buffer(buffersize)
+    channel = input_string(channel)
     dmx.DAQmxGetAICustomScaleName(taskhandle, channel, byref(scalename), 
                                   buffersize)
-    return scalename.value
+    return output_string(scalename.value)
 
 
 def GetCICustomScaleName(taskhandle, channel):
     scalename = ctypes.create_string_buffer(512)
+    channel = input_string(channel)
     dmx.DAQmxGetCICustomScaleName(taskhandle, channel, byref(scalename), 512)
-    return scalename.value
+    return output_string(scalename.value)
 
 
 def GetChanAttribute(taskhandle, channel, attribute):
     """Gets a channel attribute."""
     value = char()
+    channel = input_string(channel)
     dmx.DAQmxGetChanAttribute(taskhandle, channel, attribute, byref(value))
     return value.value
     
 
 def GetChanType(taskhandle, channel):
     data = int32()
+    channel = input_string(channel)
     dmx.DAQmxGetChanType(taskhandle, channel, byref(data))
     return data.value    
     
@@ -386,7 +390,8 @@ def GetTaskChannels(taskhandle):
     """Returns a list of channels associated with a task."""
     channels = ctypes.create_string_buffer(512)    
     dmx.DAQmxGetTaskChannels(taskhandle, byref(channels), 512)
-    return channels.value.split(", ")
+    channels = output_string(channels.value)
+    return channels.split(", ")
 
 
 def GetErrorString(errorcode, buffersize=512):
@@ -430,7 +435,20 @@ def ErrorHandling(returned_value, fatalerror=True):
         else: print(estring)
     else: return
     
-    
+
+def input_string(string):
+    if type(string) == str:
+        return string.encode()
+    else:
+        return string
+        
+        
+def output_string(string):
+    if type(string) == bytes:
+        return string.decode()
+    else:
+        return string
+
 
 # Values for DAQmx Contants
 Val_SampClkPeriods = 10286      
