@@ -36,6 +36,7 @@ def test_global_virtual_channel():
     th = daqmx.TaskHandle()
     daqmx.CreateTask("", th)
     daqmx.AddGlobalChansToTask(th, "drag_left")
+    daqmx.AddGlobalChansToTask(th, ["drag_right", "torque_trans"])
     daqmx.ClearTask(th)
     
 def test_get_sys_global_channels():
@@ -43,6 +44,12 @@ def test_get_sys_global_channels():
     
 def test_get_dev_ai_phys_channels():
     print(daqmx.GetDevAIPhysicalChans("Dev1"))
+    
+def test_GetTerminalNameWithDevPrefix():
+    th = daqmx.TaskHandle()
+    daqmx.CreateTask("", th)
+    daqmx.AddGlobalChansToTask(th, "drag_left")
+    print(daqmx.GetTerminalNameWithDevPrefix(th, "PFI0"))
     
 
 if __name__ == "__main__":
@@ -52,5 +59,6 @@ if __name__ == "__main__":
 #    test_single_channel_analog_input_task()
 #    test_analog_input_bridge()
 #    test_global_virtual_channel()
-    test_get_sys_global_channels()
-    test_get_dev_ai_phys_channels()
+#    test_get_sys_global_channels()
+#    test_get_dev_ai_phys_channels()
+    test_GetTerminalNameWithDevPrefix()

@@ -73,7 +73,7 @@ taskhandle: The task handle to which to add the channels from MAX. \n
 channelnames: List containing channel names
     """
     if type(channelnames) == list:
-        channelnames = ", ".join(channelnames.encode("ascii"))
+        channelnames = ", ".join(channelnames)
     if type(channelnames) == str:
         channelnames = channelnames.encode("ascii")
     rv = dmx.DAQmxAddGlobalChansToTask(taskhandle, channelnames)
@@ -231,7 +231,10 @@ def GetNthTaskDevice(taskhandle, index, buffersize):
     device = ctypes.create_string_buffer(buffersize)
     dmx.DAQmxGetNthTaskDevice(taskhandle, uInt32(index), byref(device), 
                               int32(buffersize))
-    return device.value
+    dev = device.value
+    if type(dev) == bytes:
+        dev = dev.decode()
+    return dev
     
     
 def GetDevProductCategory(device):
