@@ -154,8 +154,7 @@ def StartTask(taskhandle, fatalerror=True):
 def CfgSampClkTiming(taskhandle, source, rate, active_edge, sample_mode,
                      samps_per_chan, fatalerror=True):
     """Configures sample clock timing."""
-    if type(source) == str:
-        source = source.encode()
+    source = input_string(source)
     rv = dmx.DAQmxCfgSampClkTiming(taskhandle, source, double(rate), 
             int32(active_edge), int32(sample_mode), uInt64(samps_per_chan))
     ErrorHandling(rv, fatalerror)
@@ -285,7 +284,7 @@ def SetDigEdgeStartTrigSrc(taskhandle, trigsrc):
 
 def SetDigEdgeStartTrigEdge(taskhandle, trigedge):
     """Sets digital edge start trigger edge."""
-    dmx.DAQmxSetDigEdgeStartTrigEdge(taskhandle, input_string(trigedge))
+    dmx.DAQmxSetDigEdgeStartTrigEdge(taskhandle, trigedge)
 
 
 def GetScaleAttribute(scalename, attribute):
@@ -349,6 +348,7 @@ def GetCILinEncoderDisPerPulse(taskhandle, channel):
 def GetCILinEncoderUnits(taskhandle, channel):
     """Get linear encoder units."""
     data = int32()
+    channel = input_string(channel)
     dmx.DAQmxGetCILinEncoderUnits(taskhandle, channel, byref(data))
     if data.value in units:
         return units[data.value]
@@ -437,16 +437,16 @@ def ErrorHandling(returned_value, fatalerror=True):
     
 
 def input_string(string):
-    if type(string) == str:
+    if type(string) == str or type(string) == unicode:
         return string.encode()
-    else:
+    elif type(string) == bytes:
         return string
         
         
 def output_string(string):
     if type(string) == bytes:
         return string.decode()
-    else:
+    elif type(string) == str:
         return string
 
 
