@@ -162,7 +162,7 @@ class NiDaqThread(object):
         daqmx.SetDigEdgeStartTrigEdge(self.carpostask, daqmx.Val_Rising)
         daqmx.SetDigEdgeStartTrigEdge(self.turbangtask, daqmx.Val_Rising)
         
-    def run(self):
+    def run(self, dur):
         """Start DAQmx tasks."""
         # Acquire and throwaway samples for alignment
         # Need to set these up on a different task?
@@ -222,7 +222,7 @@ class NiDaqThread(object):
         daqmx.StartTask(self.turbangtask)
         daqmx.StartTask(self.analogtask)
         
-        time.sleep(1)
+        time.sleep(dur)
         self.clear()
         
     def stopdaq(self):
@@ -237,9 +237,9 @@ class NiDaqThread(object):
         daqmx.ClearTask(self.turbangtask)
         self.collect = False
         
-def test_ni_daq_thread():
+def test_ni_daq_thread(dur=1):
     t = NiDaqThread(usetrigger=False)
-    t.run()
+    t.run(dur)
     plt.plot(t.data["t"], t.data["drag_left"])
     
 def test_all():
@@ -266,5 +266,5 @@ if __name__ == "__main__":
 #    test_get_dev_ai_phys_channels()
 #    test_GetTerminalNameWithDevPrefix()
 #    test_GetTrigSrcWithDevPrefix()
-#    test_ni_daq_thread()
-    test_all()
+    test_ni_daq_thread(dur=30)
+#    test_all()
