@@ -23,7 +23,7 @@ def test_all():
 
 if __name__ == "__main__":
     test_task()
-#    test_task_autologging(".csv", duration=5)
+#    test_task_autologging(".csv", duration=1)
 #    test_task_autotrim()
 #    test_single_channel_analog_input_task()
 #    test_analog_input_bridge()

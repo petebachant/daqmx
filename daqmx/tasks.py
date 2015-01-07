@@ -9,7 +9,6 @@ Create objects for DAQmx tasks
 from __future__ import print_function, division
 import daqmx
 import numpy as np
-from . import channels
 from PyDAQmx import Task as PyDaqMxTask
 import pandas as pd
 import os
@@ -42,7 +41,7 @@ class Task(PyDaqMxTask):
         
     def create_channel(self):
         """Creates and returns a channel object."""
-        return channels.Channel()        
+        return daqmx.channels.Channel()        
         
     def add_channel(self, channel):
         """Add existing channel object to channels dict."""
@@ -245,7 +244,7 @@ class Task(PyDaqMxTask):
 class SingleChannelAnalogInputVoltageTask(Task):
     def __init__(self, name, phys_chan):
         Task.__init__(self)
-        channel = channels.AnalogInputVoltageChannel()
+        channel = daqmx.channels.AnalogInputVoltageChannel()
         channel.physical_channel = phys_chan
         channel.name = name
         self.add_channel(channel)

@@ -6,17 +6,16 @@ Created on Wed Nov 12 16:30:15 2014
 """
 from __future__ import division, print_function
 import daqmx
-from . import tasks
-from . import channels
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 from pxl import timeseries as ts
 from pxl import fdiff
 import pandas as pd
+import os
 
 def test_single_channel_analog_input_task(duration=3):
-    task = tasks.SingleChannelAnalogInputVoltageTask("ai0", "Dev1/ai0")
+    task = daqmx.tasks.SingleChannelAnalogInputVoltageTask("ai0", "Dev1/ai0")
     task.sample_rate = 1000
     task.setup_append_data()
     task.start()
@@ -26,10 +25,10 @@ def test_single_channel_analog_input_task(duration=3):
     plt.plot(task.data["time"], task.data["ai0"])
     
 def test_analog_input_bridge(duration=3):
-    c = channels.AnalogInputBridgeChannel()
+    c = daqmx.channels.AnalogInputBridgeChannel()
     c.physical_channel = "cDAQ1Mod2/ai0"
     c.name = "bridge"
-    task = tasks.Task()
+    task = daqmx.tasks.Task()
     task.add_channel(c)
     task.setup_append_data()
     task.start()
@@ -248,12 +247,12 @@ def test_ni_daq_thread(dur=1):
 def test_task(duration=3):
     import time
     import matplotlib.pyplot as plt
-    task = tasks.Task()
-    c = channels.AnalogInputVoltageChannel()
+    task = daqmx.tasks.Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input 0"
     task.add_channel(c)
-    c2 = channels.AnalogInputVoltageChannel()
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
     c2.physical_channel = "Dev1/ai1"
     c2.name = "analog input 1"
     task.add_channel(c2)
@@ -270,12 +269,12 @@ def test_task_autologging(filetype=".csv", duration=3):
     import matplotlib.pyplot as plt
     from pxl import timeseries
     print("Testing autologging to", filetype)
-    task = tasks.Task()
-    c = channels.AnalogInputVoltageChannel()
+    task = daqmx.tasks.Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input 0"
     task.add_channel(c)
-    c2 = channels.AnalogInputVoltageChannel()
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
     c2.physical_channel = "Dev1/ai1"
     c2.name = "analog input 1"
     task.add_channel(c2)
@@ -290,16 +289,18 @@ def test_task_autologging(filetype=".csv", duration=3):
         data = timeseries.loadhdf("test" + filetype)
     plt.plot(data["time"], data["analog input 0"])
     plt.plot(data["time"], data["analog input 1"])
+    print("Deleting test CSV")
+    os.remove("test.csv")
     
 def test_task_autotrim(duration=5):
     import time
     import matplotlib.pyplot as plt
-    task = tasks.Task()
-    c = channels.AnalogInputVoltageChannel()
+    task = daqmx.tasks.Task()
+    c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
     c.name = "analog input 0"
     task.add_channel(c)
-    c2 = channels.AnalogInputVoltageChannel()
+    c2 = daqmx.channels.AnalogInputVoltageChannel()
     c2.physical_channel = "Dev1/ai1"
     c2.name = "analog input 1"
     task.add_channel(c2)
