@@ -256,7 +256,7 @@ def test_all():
     test_ni_daq_thread()
 
 if __name__ == "__main__":
-#    daqmx.tasks.test_task()
+    daqmx.tasks.test_task()
 #    daqmx.tasks.test_task_autologging(".csv", duration=5)
 #    daqmx.tasks.test_task_autotrim()
 #    test_single_channel_analog_input_task()
@@ -266,5 +266,5 @@ if __name__ == "__main__":
 #    test_get_dev_ai_phys_channels()
 #    test_GetTerminalNameWithDevPrefix()
 #    test_GetTrigSrcWithDevPrefix()
-    test_ni_daq_thread(dur=30)
+#    test_ni_daq_thread(dur=10)
 #    test_all()
