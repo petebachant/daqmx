@@ -293,6 +293,7 @@ def test_task_autologging(filetype=".csv", duration=3):
     os.remove("test.csv")
     
 def test_task_autotrim(duration=5):
+    print("Testing task autotrim functionality")
     import time
     import matplotlib.pyplot as plt
     task = daqmx.tasks.Task()
@@ -304,12 +305,12 @@ def test_task_autotrim(duration=5):
     c2.physical_channel = "Dev1/ai1"
     c2.name = "analog input 1"
     task.add_channel(c2)
-    task.setup_append_data(autotrim=True, autotrim_limit=400)
+    task.setup_append_data(autotrim=True, autotrim_limit=100)
     task.start()
     time.sleep(duration)
     task.stop()
     task.clear()
     plt.plot(task.data["time"], task.data[c.name])
     plt.plot(task.data["time"], task.data[c2.name])
-    print("Test successful:", np.size(task.data) < task.autotrim_limit)
-    assert np.size(task.data) < task.autotrim_limit
+    assert len(task.data) < task.autotrim_limit
+    print("PASS")

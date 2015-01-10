@@ -206,11 +206,8 @@ class Task(PyDaqMxTask):
     def autotrim_dataframe(self):
         """Trims off the oldest rows in the DataFrame to keep it smaller
         than `autotrim_limit`."""
-        current_size = np.size(self.data)
-        if current_size > self.autotrim_limit:
-            rows, columns = np.shape(self.data)
-            newrows = self.autotrim_limit//columns
-            self.data = self.data.iloc[newrows:]
+        if len(self.data) > self.autotrim_limit:
+            self.data = self.data.iloc[self.autotrim_limit:]
                                
     def check(self, verbose=False):
         """Checks that all channel types in task are the same."""
