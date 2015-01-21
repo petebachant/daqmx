@@ -86,6 +86,8 @@ class Task(PyDaqMxTask):
             self.sample_mode = sample_mode
         if samples_per_channel:
             self.samples_per_channel = samples_per_channel
+        else:
+            self.samples_per_channel = int(self.sample_rate/10)
         sample_mode = daqmx.parameters[self.sample_mode]
         sample_clock_active_edge = daqmx.parameters[self.sample_clock_active_edge]
         daqmx.CfgSampClkTiming(self.handle, 
