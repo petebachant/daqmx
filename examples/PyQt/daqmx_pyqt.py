@@ -12,7 +12,7 @@ import PyQt4.Qwt5 as Qwt
 from mainwindow import *
 import sys
 import time
-from daqmx import daqmx
+import daqmx
 import numpy as np
 import wavegen
 
@@ -31,9 +31,8 @@ class MainWindow(QtGui.QMainWindow):
         self.daqthread = self.WorkThread("Dev1/ai0")
         
         # Get available physical channels
-        self.channels = daqmx.GetDevAIPhysicalChans("Dev1", 200)
-        self.chanlist = self.channels.split(", ")
-        self.ui.combo_box.addItems(QStringList(self.chanlist))
+        self.chanlist = daqmx.GetDevAIPhysicalChans("Dev1", 200)
+        self.ui.combo_box.addItems(self.chanlist)
         self.globchans = daqmx.GetSysGlobalChans(200)
         
         # Connect signals to appropriate slots
