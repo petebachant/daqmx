@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "daqmx"
+description = "A wrapper for the NI DAQmx driver"
+authors = [{name = "Pete Bachant", email = "petebachant@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE.md"}
+dynamic = ["version"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Multimedia :: Graphics",
+    "Operating System :: OS Independent",
+    "Framework :: Matplotlib",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyDAQmx",
+    "pandas",
+    "h5py",
+]
+
+[project.urls]
+Source = "https://github.com/petebachant/daqmx"
+
+[tool.setuptools.dynamic]
+version = {attr = "daqmx.__version__"}
