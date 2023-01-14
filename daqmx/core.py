@@ -9,9 +9,15 @@ All functions have the same camel case naming scheme.
 
 """
 from __future__ import print_function, division
-from PyDAQmx.DAQmxTypes import DAQmxEveryNSamplesEventCallbackPtr as EveryNSamplesEventCallbackPtr
-from PyDAQmx.DAQmxTypes import DAQmxDoneEventCallbackPtr as DoneEventCallbackPtr
-from PyDAQmx.DAQmxTypes import DAQmxSignalEventCallbackPtr as SignalEventCallbackPtr
+from PyDAQmx.DAQmxTypes import (
+    DAQmxEveryNSamplesEventCallbackPtr as EveryNSamplesEventCallbackPtr,
+)
+from PyDAQmx.DAQmxTypes import (
+    DAQmxDoneEventCallbackPtr as DoneEventCallbackPtr,
+)
+from PyDAQmx.DAQmxTypes import (
+    DAQmxSignalEventCallbackPtr as SignalEventCallbackPtr,
+)
 from PyDAQmx.DAQmxCallBack import *
 import ctypes
 from ctypes import byref
@@ -35,26 +41,45 @@ def CreateTask(taskname, taskhandle):
     ErrorHandling(dmx.DAQmxCreateTask(taskname, byref(taskhandle)))
 
 
-def CreateCOPulseChanTime(taskhandle, phys_chan, chan_name, units,
-        idlestate, initialdelay, lowtime, hightime, fatalerror=True):
+def CreateCOPulseChanTime(
+    taskhandle,
+    phys_chan,
+    chan_name,
+    units,
+    idlestate,
+    initialdelay,
+    lowtime,
+    hightime,
+    fatalerror=True,
+):
     """Creates a counter output channel based on pulse time."""
     initialdelay = double(initialdelay)
     lowtime = double(lowtime)
     hightime = double(hightime)
-    rv = dmx.DAQmxCreateCOPulseChanTime(taskhandle, phys_chan, chan_name,
-        units, idlestate, initialdelay, lowtime, hightime)
+    rv = dmx.DAQmxCreateCOPulseChanTime(
+        taskhandle,
+        phys_chan,
+        chan_name,
+        units,
+        idlestate,
+        initialdelay,
+        lowtime,
+        hightime,
+    )
     ErrorHandling(rv, fatalerror)
 
 
-def CfgImplicitTiming(taskhandle, samplemode, sampsPerChanToAcquire, 
-                      fatalerror=False):
-    rv = dmx.DAQmxCfgImplicitTiming(taskhandle, samplemode, 
-                                    uInt64(sampsPerChanToAcquire))
+def CfgImplicitTiming(
+    taskhandle, samplemode, sampsPerChanToAcquire, fatalerror=False
+):
+    rv = dmx.DAQmxCfgImplicitTiming(
+        taskhandle, samplemode, uInt64(sampsPerChanToAcquire)
+    )
     ErrorHandling(rv, fatalerror)
-    
+
 
 def CfgDigEdgeStartTrig(taskHandle, triggerSource, triggerEdge):
-    """Configures the task to start acquiring or generating samples on a 
+    """Configures the task to start acquiring or generating samples on a
     rising or falling edge of a digital signal."""
     triggerSource = input_string(triggerSource)
     dmx.DAQmxCfgDigEdgeStartTrig(taskHandle, triggerSource, int32(triggerEdge))
@@ -62,66 +87,117 @@ def CfgDigEdgeStartTrig(taskHandle, triggerSource, triggerEdge):
 
 def AddGlobalChansToTask(taskhandle, channelnames, fatalerror=True):
     """
-DAQmxAddGlobalChansToTask
-=========================
-int32 DAQmxAddGlobalChansToTask (TaskHandle taskHandle, const char channelNames[]);
+    DAQmxAddGlobalChansToTask
+    =========================
+    int32 DAQmxAddGlobalChansToTask (TaskHandle taskHandle, const char channelNames[]);
 
-Purpose
--------
-Adds global virtual channels from MAX to the given task.
+    Purpose
+    -------
+    Adds global virtual channels from MAX to the given task.
 
-Parameters
-----------
-taskhandle: The task handle to which to add the channels from MAX. \n
-channelnames: List containing channel names
+    Parameters
+    ----------
+    taskhandle: The task handle to which to add the channels from MAX. \n
+    channelnames: List containing channel names
     """
     if type(channelnames) == list:
         channelnames = ", ".join(channelnames)
     channelnames = input_string(channelnames)
     rv = dmx.DAQmxAddGlobalChansToTask(taskhandle, channelnames)
     ErrorHandling(rv, fatalerror)
-    
 
-def CreateAIVoltageChan(taskhandle, phys_chan, name_to_assign, terminalconfig,
-        minval, maxval, units, custom_scale_name=None, fatalerror=True):
+
+def CreateAIVoltageChan(
+    taskhandle,
+    phys_chan,
+    name_to_assign,
+    terminalconfig,
+    minval,
+    maxval,
+    units,
+    custom_scale_name=None,
+    fatalerror=True,
+):
     """Creates an analog voltage input channel"""
     if type(phys_chan) == str:
         phys_chan = phys_chan.encode()
-    rv = dmx.DAQmxCreateAIVoltageChan(taskhandle, phys_chan, name_to_assign, 
-        int32(terminalconfig), double(minval), double(maxval), int32(units), 
-        custom_scale_name)
+    rv = dmx.DAQmxCreateAIVoltageChan(
+        taskhandle,
+        phys_chan,
+        name_to_assign,
+        int32(terminalconfig),
+        double(minval),
+        double(maxval),
+        int32(units),
+        custom_scale_name,
+    )
     ErrorHandling(rv, fatalerror)
 
 
-def CreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, minval, 
-        maxval, units, bridge_config, voltage_exc_source, voltage_exc_val, 
-        nominal_bridge_resistance, custom_scale_name=None):
+def CreateAIBridgeChan(
+    taskhandle,
+    phys_chan,
+    name_to_assign,
+    minval,
+    maxval,
+    units,
+    bridge_config,
+    voltage_exc_source,
+    voltage_exc_val,
+    nominal_bridge_resistance,
+    custom_scale_name=None,
+):
     """Creates an analog input bridge channel."""
     if type(phys_chan) == str:
         phys_chan = phys_chan.encode()
-    rv = dmx.DAQmxCreateAIBridgeChan(taskhandle, phys_chan, name_to_assign, 
-            double(minval), double(maxval), int32(units), int32(bridge_config), 
-            int32(voltage_exc_source), double(voltage_exc_val), 
-            double(nominal_bridge_resistance), custom_scale_name);
+    rv = dmx.DAQmxCreateAIBridgeChan(
+        taskhandle,
+        phys_chan,
+        name_to_assign,
+        double(minval),
+        double(maxval),
+        int32(units),
+        int32(bridge_config),
+        int32(voltage_exc_source),
+        double(voltage_exc_val),
+        double(nominal_bridge_resistance),
+        custom_scale_name,
+    )
     ErrorHandling(rv)
-    
 
-def CreateAOVoltageChan(taskHandle, physicalChannel, nameToAssignToChannel, 
-        minVal, maxVal, units, customScaleName, fatalerror=True):
-    """"Creates an analog voltage output channel."""
+
+def CreateAOVoltageChan(
+    taskHandle,
+    physicalChannel,
+    nameToAssignToChannel,
+    minVal,
+    maxVal,
+    units,
+    customScaleName,
+    fatalerror=True,
+):
+    """ "Creates an analog voltage output channel."""
     if type(physicalChannel) == str:
         physicalChannel = physicalChannel.encode()
-    rv = dmx.DAQmxCreateAOVoltageChan(taskHandle, physicalChannel, 
-        nameToAssignToChannel, double(minVal), double(maxVal), int32(units), 
-        customScaleName)
+    rv = dmx.DAQmxCreateAOVoltageChan(
+        taskHandle,
+        physicalChannel,
+        nameToAssignToChannel,
+        double(minVal),
+        double(maxVal),
+        int32(units),
+        customScaleName,
+    )
     ErrorHandling(rv, fatalerror)
 
 
-def CreateDIChan(taskhandle, lines, nameToAssignToLines, linegrouping, 
-                 fatalerror=True):
+def CreateDIChan(
+    taskhandle, lines, nameToAssignToLines, linegrouping, fatalerror=True
+):
     """Creates a digital input channel."""
-    rv = dmx.DAQmxCreateDIChan(taskhandle, lines, nameToAssignToLines,
-                               int32(linegrouping))
+    rv = dmx.DAQmxCreateDIChan(
+        taskhandle, lines, nameToAssignToLines, int32(linegrouping)
+    )
     ErrorHandling(rv, fatalerror)
 
 
@@ -130,13 +206,14 @@ def GetDevAIPhysicalChans(device, buffersize=512, fatalerror=False):
     channels = ctypes.create_string_buffer(buffersize)
     if type(device) == str:
         device = device.encode()
-    rv = dmx.DAQmxGetDevAIPhysicalChans(device, byref(channels), 
-                                        uInt32(buffersize))
+    rv = dmx.DAQmxGetDevAIPhysicalChans(
+        device, byref(channels), uInt32(buffersize)
+    )
     ErrorHandling(rv, fatalerror)
     chans = channels.value.decode()
     return chans.split(", ")
-    
-    
+
+
 def GetSysGlobalChans(buffersize=512):
     """Returns a list of system global channels."""
     channels = ctypes.create_string_buffer(buffersize)
@@ -144,35 +221,64 @@ def GetSysGlobalChans(buffersize=512):
     ErrorHandling(rv, fatalerror=False)
     channels = output_string(channels.value)
     return channels.split(", ")
-    
+
 
 def StartTask(taskhandle, fatalerror=True):
     """Starts a DAQmx task."""
     ErrorHandling(dmx.DAQmxStartTask(taskhandle), fatalerror)
-        
 
-def CfgSampClkTiming(taskhandle, source, rate, active_edge, sample_mode,
-                     samps_per_chan, fatalerror=True):
+
+def CfgSampClkTiming(
+    taskhandle,
+    source,
+    rate,
+    active_edge,
+    sample_mode,
+    samps_per_chan,
+    fatalerror=True,
+):
     """Configures sample clock timing."""
     source = input_string(source)
-    rv = dmx.DAQmxCfgSampClkTiming(taskhandle, source, double(rate), 
-            int32(active_edge), int32(sample_mode), uInt64(samps_per_chan))
+    rv = dmx.DAQmxCfgSampClkTiming(
+        taskhandle,
+        source,
+        double(rate),
+        int32(active_edge),
+        int32(sample_mode),
+        uInt64(samps_per_chan),
+    )
     ErrorHandling(rv, fatalerror)
 
-        
-def ReadAnalogF64(taskhandle, samps_per_chan, timeout, fillmode, 
-                  array_size_samps, nchan, fatalerror=True):
-    """Reads analog data."""                  
-    read_array = np.zeros((samps_per_chan*nchan), dtype=np.float64)
+
+def ReadAnalogF64(
+    taskhandle,
+    samps_per_chan,
+    timeout,
+    fillmode,
+    array_size_samps,
+    nchan,
+    fatalerror=True,
+):
+    """Reads analog data."""
+    read_array = np.zeros((samps_per_chan * nchan), dtype=np.float64)
     samps_pchan_read = int32()
-    rv = dmx.DAQmxReadAnalogF64(taskhandle, uInt32(samps_per_chan), 
-            double(timeout), fillmode, read_array.ctypes.data,
-            uInt32(int(array_size_samps*nchan)), byref(samps_pchan_read), None)                          
+    rv = dmx.DAQmxReadAnalogF64(
+        taskhandle,
+        uInt32(samps_per_chan),
+        double(timeout),
+        fillmode,
+        read_array.ctypes.data,
+        uInt32(int(array_size_samps * nchan)),
+        byref(samps_pchan_read),
+        None,
+    )
     ErrorHandling(rv, fatalerror)
     # Split up read array into a column per channel
     array2d = np.zeros((samps_per_chan, nchan))
     for n in range(nchan):
-        array2d[:,n] = read_array[n*samps_per_chan:(n+1)*samps_per_chan]
+        array2d[:, n] = read_array[
+            n * samps_per_chan : (n + 1) * samps_per_chan
+        ]
     return array2d, samps_pchan_read.value
 
 
@@ -180,66 +286,101 @@ def ReadCounterF64(taskHandle, numSampsPerChan, timeout, arraySizeInSamps):
     """Read counter data in as float64."""
     sampsPerChanRead = int32()
     readArray = np.zeros(numSampsPerChan)
-    dmx.DAQmxReadCounterF64(taskHandle, numSampsPerChan, double(timeout), 
-                            readArray.ctypes.data, 
-                            arraySizeInSamps, byref(sampsPerChanRead), None)
-                            
+    dmx.DAQmxReadCounterF64(
+        taskHandle,
+        numSampsPerChan,
+        double(timeout),
+        readArray.ctypes.data,
+        arraySizeInSamps,
+        byref(sampsPerChanRead),
+        None,
+    )
+
     return readArray, sampsPerChanRead.value
 
 
-def WriteAnalogF64(taskHandle, numSampsPerChan, autoStart, timeout, 
-                   dataLayout, writeArray, fatalerror=True):
+def WriteAnalogF64(
+    taskHandle,
+    numSampsPerChan,
+    autoStart,
+    timeout,
+    dataLayout,
+    writeArray,
+    fatalerror=True,
+):
     """Writes analog voltage. Returns samples written per channel."""
     sampsPerChanWritten = int32()
-    rv = dmx.DAQmxWriteAnalogF64(taskHandle, int32(numSampsPerChan), 
-            autoStart, double(timeout), dataLayout, writeArray.ctypes.data, 
-            byref(sampsPerChanWritten), None)
+    rv = dmx.DAQmxWriteAnalogF64(
+        taskHandle,
+        int32(numSampsPerChan),
+        autoStart,
+        double(timeout),
+        dataLayout,
+        uInt64(writeArray.ctypes.data),
+        byref(sampsPerChanWritten),
+        None,
+    )
     ErrorHandling(rv, fatalerror)
     return sampsPerChanWritten.value
 
 
-def ReadDigitalU32(taskHandle, sampsPerChan, timeout, fillMode, 
-                   arraySizeInSamps, nchan, fatalerror=True):
-    """Reads digital data. Returns an array of samples and the number of 
+def ReadDigitalU32(
+    taskHandle,
+    sampsPerChan,
+    timeout,
+    fillMode,
+    arraySizeInSamps,
+    nchan,
+    fatalerror=True,
+):
+    """Reads digital data. Returns an array of samples and the number of
     samples read per channel."""
     sampsPerChanRead = int32()
     readArray = np.zeros((sampsPerChan, nchan), dtype=np.uint32)
-    rv = dmx.DAQmxReadDigitalU32(taskHandle, int32(sampsPerChan), 
-            double(timeout), fillMode, readArray.ctypes.data, 
-            uInt32(arraySizeInSamps), byref(sampsPerChanRead), None)
+    rv = dmx.DAQmxReadDigitalU32(
+        taskHandle,
+        int32(sampsPerChan),
+        double(timeout),
+        fillMode,
+        readArray.ctypes.data,
+        uInt32(arraySizeInSamps),
+        byref(sampsPerChanRead),
+        None,
+    )
     ErrorHandling(rv, fatalerror)
-    return readArray, sampsPerChanRead.value                                 
+    return readArray, sampsPerChanRead.value
 
 
 def WaitUntilTaskDone(taskhandle, timeout, fatalerror=True):
     rv = dmx.DAQmxWaitUntilTaskDone(taskhandle, double(timeout))
-    ErrorHandling(rv, fatalerror)    
+    ErrorHandling(rv, fatalerror)
 
 
 def StopTask(taskhandle, fatalerror=True):
     """Stops a DAQmx task."""
     ErrorHandling(dmx.DAQmxStopTask(taskhandle), fatalerror)
-        
+
 
 def ClearTask(taskhandle, fatalerror=True):
     """Clears a DAQmx task."""
     rv = dmx.DAQmxClearTask(taskhandle)
     ErrorHandling(rv, fatalerror)
-    
-    
+
+
 def GetNthTaskDevice(taskhandle, index, buffersize):
     device = ctypes.create_string_buffer(buffersize)
-    dmx.DAQmxGetNthTaskDevice(taskhandle, uInt32(index), byref(device), 
-                              int32(buffersize))
+    dmx.DAQmxGetNthTaskDevice(
+        taskhandle, uInt32(index), byref(device), int32(buffersize)
+    )
     dev = device.value
     return output_string(dev)
-    
-    
+
+
 def GetDevProductCategory(device):
     prodcat = int32()
     dmx.DAQmxGetDevProductCategory(device, byref(prodcat))
     return prodcat.value
-    
+
 
 def GetTaskNumDevices(taskhandle):
     numdevices = uInt32()
@@ -249,27 +390,27 @@ def GetTaskNumDevices(taskhandle):
 
 def GetTerminalNameWithDevPrefix(taskhandle, terminalname):
     """Gets terminal name with device prefix.
-       Returns trigger name."""
+    Returns trigger name."""
     ndev = GetTaskNumDevices(taskhandle)
-    for i in range(1, ndev+1):
-         device = GetNthTaskDevice(taskhandle, i, 256)
-         pcat = GetDevProductCategory(device)
-         if pcat != Val_CSeriesModule and pcat != Val_SCXIModule:
-             triggername = "/" + device + "/" + terminalname
-             break
+    for i in range(1, ndev + 1):
+        device = GetNthTaskDevice(taskhandle, i, 256)
+        pcat = GetDevProductCategory(device)
+        if pcat != Val_CSeriesModule and pcat != Val_SCXIModule:
+            triggername = "/" + device + "/" + terminalname
+            break
     return triggername
-    
+
 
 def GetTrigSrcWithDevPrefix(taskhandle, terminalname):
     """Gets terminal name with device prefix and returns trigger name."""
     ndev = GetTaskNumDevices(taskhandle)
-    for i in range(1, ndev+1):
-         device = GetNthTaskDevice(taskhandle, i, 256)
-         pcat = GetDevProductCategory(device)
-         if pcat != Val_CSeriesModule and pcat != Val_SCXIModule:
-             triggername = "/" + device + "/" + terminalname
-             break
-    return triggername    
+    for i in range(1, ndev + 1):
+        device = GetNthTaskDevice(taskhandle, i, 256)
+        pcat = GetDevProductCategory(device)
+        if pcat != Val_CSeriesModule and pcat != Val_SCXIModule:
+            triggername = "/" + device + "/" + terminalname
+            break
+    return triggername
 
 
 def SetStartTrigType(taskhandle, trigtype):
@@ -290,7 +431,9 @@ def SetDigEdgeStartTrigEdge(taskhandle, trigedge):
 def GetScaleAttribute(scalename, attribute):
     """Gets a scale attribute. Need to get constants for attributes"""
     value = double()
-    dmx.DAQmxGetScaleAttribute(input_string(scalename), attribute, byref(value))
+    dmx.DAQmxGetScaleAttribute(
+        input_string(scalename), attribute, byref(value)
+    )
     return value
 
 
@@ -299,20 +442,22 @@ def GetScaleLinSlope(scalename):
     linslope = double()
     dmx.DAQmxGetScaleLinSlope(input_string(scalename), byref(linslope))
     return linslope.value
-    
-    
+
+
 def GetScaleLinYIntercept(scalename):
     """Returns scale linear y-intercept"""
     yint = double()
     dmx.DAQmxGetScaleLinYIntercept(input_string(scalename), byref(yint))
     return yint.value
-    
-    
+
+
 def GetScaleScaledUnits(scalename, buffersize=512):
     scaledunits = ctypes.create_string_buffer(buffersize)
-    dmx.DAQmxGetScaleScaledUnits(input_string(scalename), byref(scaledunits), buffersize)
+    dmx.DAQmxGetScaleScaledUnits(
+        input_string(scalename), byref(scaledunits), buffersize
+    )
     return output_string(scaledunits.value)
-    
+
 
 def GetScalePreScaledUnits(scalename):
     unitint = uInt32()
@@ -320,16 +465,17 @@ def GetScalePreScaledUnits(scalename):
     unitint = unitint.value
     if unitint in units:
         return units[unitint]
-    else: 
+    else:
         return None
 
-    
+
 def GetCIAngEncoderUnits(taskhandle, channel):
     data = int32()
     dmx.DAQmxGetCIAngEncoderUnits(taskhandle, channel, byref(data))
     if data.value in units:
         return units[data.value]
-    else: return data.value
+    else:
+        return data.value
 
 
 def GetCIAngEncoderPulsesPerRev(taskhandle, channel):
@@ -337,13 +483,13 @@ def GetCIAngEncoderPulsesPerRev(taskhandle, channel):
     dmx.DAQmxGetCIAngEncoderPulsesPerRev(taskhandle, channel, byref(data))
     return int(data.value)
 
-    
+
 def GetCILinEncoderDisPerPulse(taskhandle, channel):
     """Get linear encoder distance per pulse."""
     data = double()
     dmx.DAQmxGetCILinEncoderDistPerPulse(taskhandle, channel, byref(data))
     return data.value
-    
+
 
 def GetCILinEncoderUnits(taskhandle, channel):
     """Get linear encoder units."""
@@ -352,15 +498,17 @@ def GetCILinEncoderUnits(taskhandle, channel):
     dmx.DAQmxGetCILinEncoderUnits(taskhandle, channel, byref(data))
     if data.value in units:
         return units[data.value]
-    else: return data.value
-    
+    else:
+        return data.value
+
 
 def GetAICustomScaleName(taskhandle, channel, buffersize=512):
     """Gets a custom scale name from an analog input task."""
     scalename = ctypes.create_string_buffer(buffersize)
     channel = input_string(channel)
-    dmx.DAQmxGetAICustomScaleName(taskhandle, channel, byref(scalename), 
-                                  buffersize)
+    dmx.DAQmxGetAICustomScaleName(
+        taskhandle, channel, byref(scalename), buffersize
+    )
     return output_string(scalename.value)
 
 
@@ -377,18 +525,18 @@ def GetChanAttribute(taskhandle, channel, attribute):
     channel = input_string(channel)
     dmx.DAQmxGetChanAttribute(taskhandle, channel, attribute, byref(value))
     return value.value
-    
+
 
 def GetChanType(taskhandle, channel):
     data = int32()
     channel = input_string(channel)
     dmx.DAQmxGetChanType(taskhandle, channel, byref(data))
-    return data.value    
-    
+    return data.value
+
 
 def GetTaskChannels(taskhandle):
     """Returns a list of channels associated with a task."""
-    channels = ctypes.create_string_buffer(512)    
+    channels = ctypes.create_string_buffer(512)
     dmx.DAQmxGetTaskChannels(taskhandle, byref(channels), 512)
     channels = output_string(channels.value)
     return channels.split(", ")
@@ -396,35 +544,48 @@ def GetTaskChannels(taskhandle):
 
 def GetErrorString(errorcode, buffersize=512):
     errorstring = ctypes.create_string_buffer(buffersize)
-    dmx.DAQmxGetErrorString(int32(errorcode), byref(errorstring), 
-                            uInt32(buffersize));
+    dmx.DAQmxGetErrorString(
+        int32(errorcode), byref(errorstring), uInt32(buffersize)
+    )
     return errorstring.value.decode()
-    
-    
-def RegisterEveryNSamplesEvent(taskHandle, everyNsamplesEventType, nSamples, 
-                               options, callbackFunction, callbackData):
-    rv = dmx.DAQmxRegisterEveryNSamplesEvent(taskHandle, 
-            int32(everyNsamplesEventType), uInt32(nSamples), uInt32(options),
-            callbackFunction, callbackData)
+
+
+def RegisterEveryNSamplesEvent(
+    taskHandle,
+    everyNsamplesEventType,
+    nSamples,
+    options,
+    callbackFunction,
+    callbackData,
+):
+    rv = dmx.DAQmxRegisterEveryNSamplesEvent(
+        taskHandle,
+        int32(everyNsamplesEventType),
+        uInt32(nSamples),
+        uInt32(options),
+        callbackFunction,
+        callbackData,
+    )
     ErrorHandling(rv)
-    
-    
+
+
 def RegisterDoneEvent(taskHandle, options, callbackFunction, callbackData):
     """Registers a done event."""
-    rv = dmx.DAQmxRegisterDoneEvent(taskHandle, uInt32(options), 
-                                    callbackFunction, callbackData)
+    rv = dmx.DAQmxRegisterDoneEvent(
+        taskHandle, uInt32(options), callbackFunction, callbackData
+    )
     ErrorHandling(rv)
-    
-    
+
+
 def SetWriteRegenMode(taskHandle, data):
     ErrorHandling(dmx.DAQmxSetWriteRegenMode(taskHandle, int32(data)))
-    
+
 
 def GetWriteSpaceAvail(taskHandle):
     writeSpaceAvail = uInt32()
     dmx.DAQmxGetWriteSpaceAvail(taskHandle, byref(writeSpaceAvail))
     return writeSpaceAvail.value
-                                     
+
 
 def ErrorHandling(returned_value, fatalerror=True):
     rv = returned_value
@@ -432,17 +593,19 @@ def ErrorHandling(returned_value, fatalerror=True):
         estring = GetErrorString(rv)
         if fatalerror == True:
             raise RuntimeError(estring)
-        else: print(estring)
-    else: return
-    
+        else:
+            print(estring)
+    else:
+        return
+
 
 def input_string(string):
     if type(string) == str or type(string) == unicode:
         return string.encode()
     elif type(string) == bytes:
         return string
-        
-        
+
+
 def output_string(string):
     if type(string) == bytes:
         return string.decode()
@@ -451,12 +614,12 @@ def output_string(string):
 
 
 # Values for DAQmx Contants
-Val_SampClkPeriods = 10286      
+Val_SampClkPeriods = 10286
 Val_Seconds = 10364
 Val_Ticks = 10304
 Val_FiniteSamps = 10178
 Val_ContSamps = 10123
-Val_Cfg_Default  = -1
+Val_Cfg_Default = -1
 Val_High = 10192
 Val_Low = 10214
 Val_Volts = 10348
@@ -486,8 +649,8 @@ Val_Internal = 10200
 Val_External = 10167
 
 # Channel attribute constants
-AI_Max = 0x17DD # Specifies the maximum value you expect to measure. This value is in the units you specify with a units property. When you query this property, it returns the coerced maximum value that the device can measure with the current settings.
-AI_Min = 0x17DE # Specifies the minimum value you expect to measure. This value is in the units you specify with a units property.  When you query this property, it returns the coerced minimum value that the device can measure with the current settings.
+AI_Max = 0x17DD  # Specifies the maximum value you expect to measure. This value is in the units you specify with a units property. When you query this property, it returns the coerced maximum value that the device can measure with the current settings.
+AI_Min = 0x17DE  # Specifies the minimum value you expect to measure. This value is in the units you specify with a units property.  When you query this property, it returns the coerced minimum value that the device can measure with the current settings.
 CustomScaleName = 0x17E0
 
 # Trigger constants
@@ -495,32 +658,36 @@ Val_DigEdge = 10150
 
 
 # Dict for units
-units = {Val_Seconds : "s",
-         Val_Meters : "m",
-         Val_Degrees : "Degrees",
-         Val_VoltsPerVolt : "V/V",
-         Val_mVoltsPerVolt : "mV/V",
-         Val_Volts : "V"}
-         
-parameters = {"rising" : Val_Rising,
-              "falling" : Val_Falling,
-              "continuous samples" : Val_ContSamps,
-              "differential" : Val_Diff,
-              "volts" : Val_Volts,
-              "V" : Val_Volts,
-              "from custom scale" : Val_FromCustomScale,
-              "group by channel" : Val_GroupByChannel,
-              "V/V" : Val_VoltsPerVolt,
-              "volts per volt" : Val_VoltsPerVolt,
-              "mV/V" : Val_mVoltsPerVolt,
-              "millivolts per volt" : Val_mVoltsPerVolt,
-              "full bridge" : Val_FullBridge,
-              "half bridge" : Val_HalfBridge,
-              "quarter bridge" : Val_QuarterBridge,
-              "internal" : Val_Internal,
-              "external" : Val_External}
+units = {
+    Val_Seconds: "s",
+    Val_Meters: "m",
+    Val_Degrees: "Degrees",
+    Val_VoltsPerVolt: "V/V",
+    Val_mVoltsPerVolt: "mV/V",
+    Val_Volts: "V",
+}
 
-    
+parameters = {
+    "rising": Val_Rising,
+    "falling": Val_Falling,
+    "continuous samples": Val_ContSamps,
+    "differential": Val_Diff,
+    "volts": Val_Volts,
+    "V": Val_Volts,
+    "from custom scale": Val_FromCustomScale,
+    "group by channel": Val_GroupByChannel,
+    "V/V": Val_VoltsPerVolt,
+    "volts per volt": Val_VoltsPerVolt,
+    "mV/V": Val_mVoltsPerVolt,
+    "millivolts per volt": Val_mVoltsPerVolt,
+    "full bridge": Val_FullBridge,
+    "half bridge": Val_HalfBridge,
+    "quarter bridge": Val_QuarterBridge,
+    "internal": Val_Internal,
+    "external": Val_External,
+}
+
+
 if __name__ == "__main__":
     chan = "drag_left"
     th = TaskHandle()
