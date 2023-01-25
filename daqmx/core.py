@@ -214,10 +214,32 @@ def GetDevAIPhysicalChans(device, buffersize=512, fatalerror=False):
     return chans.split(", ")
 
 
+def GetDevAOPhysicalChans(device, buffersize=512, fatalerror=False):
+    """Get device analog output channels."""
+    channels = ctypes.create_string_buffer(buffersize)
+    if type(device) == str:
+        device = device.encode()
+    rv = dmx.DAQmxGetDevAOPhysicalChans(
+        device, byref(channels), uInt32(buffersize)
+    )
+    ErrorHandling(rv, fatalerror)
+    chans = channels.value.decode()
+    return chans.split(", ")
+
+
 def GetSysGlobalChans(buffersize=512):
     """Returns a list of system global channels."""
     channels = ctypes.create_string_buffer(buffersize)
     rv = dmx.DAQmxGetSysGlobalChans(byref(channels), uInt32(buffersize))
+    ErrorHandling(rv, fatalerror=False)
+    channels = output_string(channels.value)
+    return channels.split(", ")
+
+
+def GetSysDevNames(buffersize=512):
+    """Returns a list of system device names."""
+    channels = ctypes.create_string_buffer(buffersize)
+    rv = dmx.DAQmxGetSysDevNames(byref(channels), uInt32(buffersize))
     ErrorHandling(rv, fatalerror=False)
     channels = output_string(channels.value)
     return channels.split(", ")
