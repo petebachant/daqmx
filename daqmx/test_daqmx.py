@@ -9,6 +9,7 @@ from pxl import timeseries as ts
 from pxl import fdiff
 import pandas as pd
 import os
+import ctypes
 
 
 def test_single_channel_analog_input_task(duration=3):
@@ -364,3 +365,51 @@ def test_task_autotrim(duration=5):
     plt.plot(task.data["time"], task.data[c2.name])
     assert len(task.data) < task.autotrim_limit
     print("PASS")
+
+
+def test_ai_task_callbacks():
+    taskHandle = daqmx.TaskHandle()
+
+    # Class of the data object
+    # one cannot create a weakref to a list directly
+    # but the following works well
+    class MyList(list):
+        pass
+
+    # list where the data are stored
+    data = MyList()
+    id_data = daqmx.create_callbackdata_id(data)
+
+    def EveryNCallback_py(
+        taskHandle, everyNsamplesEventType, nSamples, callbackData_ptr
+    ):
+        callbackdata = daqmx.get_callbackdata_from_id(callbackData_ptr)
+        read = ctypes.c_int32()
+        data = np.zeros(1000)
+        daqmx.ReadAnalogF64(
+            taskHandle,
+            1000,
+            10.0,
+            daqmx.Val_GroupByScanNumber,
+            data,
+            1000,
+            ctypes.byref(read),
+            None,
+        )
+        callbackdata.extend(data.tolist())
+        return 0  # The function should return an integer
+
+    # Convert the python function to a C function callback
+    EveryNCallback = daqmx.EveryNSamplesEventCallbackPtr(EveryNCallback_py)
+    daqmx.RegisterEveryNSamplesEvent(
+        taskHandle,
+        daqmx.Val_Acquired_Into_Buffer,
+        1000,
+        0,
+        EveryNCallback,
+        id_data,
+    )
+    daqmx.StartTask(taskHandle)
+    time.sleep(2)
+    daqmx.StopTask(taskHandle)
+    daqmx.ClearTask(taskHandle)
