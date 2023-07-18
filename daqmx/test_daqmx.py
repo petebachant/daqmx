@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 12 16:30:15 2014
+"""Tests for ``daqmx``."""
 
-@author: Pete
-"""
 from __future__ import division, print_function
 import daqmx
 import time
@@ -14,6 +10,7 @@ from pxl import fdiff
 import pandas as pd
 import os
 
+
 def test_single_channel_analog_input_task(duration=3):
     task = daqmx.tasks.SingleChannelAnalogInputVoltageTask("ai0", "Dev1/ai0")
     task.sample_rate = 1000
@@ -23,6 +20,7 @@ def test_single_channel_analog_input_task(duration=3):
     task.stop()
     task.clear()
     plt.plot(task.data["time"], task.data["ai0"])
+
 
 def test_analog_input_bridge(duration=3):
     c = daqmx.channels.AnalogInputBridgeChannel()
@@ -37,6 +35,7 @@ def test_analog_input_bridge(duration=3):
     task.clear()
     plt.plot(task.data["time"], task.data["bridge"])
 
+
 def test_global_virtual_channel():
     th = daqmx.TaskHandle()
     daqmx.CreateTask("", th)
@@ -44,11 +43,14 @@ def test_global_virtual_channel():
     daqmx.AddGlobalChansToTask(th, ["drag_right", "torque_trans"])
     daqmx.ClearTask(th)
 
+
 def test_get_sys_global_channels():
     print(daqmx.GetSysGlobalChans())
 
+
 def test_get_dev_ai_phys_channels():
     print(daqmx.GetDevAIPhysicalChans("Dev1"))
+
 
 def test_GetTerminalNameWithDevPrefix():
     th = daqmx.TaskHandle()
@@ -56,11 +58,13 @@ def test_GetTerminalNameWithDevPrefix():
     daqmx.AddGlobalChansToTask(th, "drag_left")
     print(daqmx.GetTerminalNameWithDevPrefix(th, "PFI0"))
 
+
 def test_GetTrigSrcWithDevPrefix():
     th = daqmx.TaskHandle()
     daqmx.CreateTask("", th)
     daqmx.AddGlobalChansToTask(th, "drag_left")
     print(daqmx.GetTrigSrcWithDevPrefix(th, "PFI0"))
+
 
 class NiDaqThread(object):
     def __init__(self, usetrigger=True):
@@ -75,17 +79,19 @@ class NiDaqThread(object):
         # Initialize sample rate
         self.sr = 2000.0
         self.metadata["Sample rate (Hz)"] = self.sr
-        self.nsamps = int(self.sr/10)
+        self.nsamps = int(self.sr / 10)
 
         # Create a dict of arrays for storing data
-        self.data = {"turbine_angle" : np.array([]),
-                     "turbine_rpm" : np.array([]),
-                     "torque_trans": np.array([]),
-                     "torque_arm" : np.array([]),
-                     "drag_left" : np.array([]),
-                     "drag_right" : np.array([]),
-                     "t" : np.array([]),
-                     "carriage_pos" : np.array([])}
+        self.data = {
+            "turbine_angle": np.array([]),
+            "turbine_rpm": np.array([]),
+            "torque_trans": np.array([]),
+            "torque_arm": np.array([]),
+            "drag_left": np.array([]),
+            "drag_right": np.array([]),
+            "t": np.array([]),
+            "carriage_pos": np.array([]),
+        }
         # Create one analog and one digital task
         # Probably should be a bridge task in there too!
         self.analogtask = daqmx.TaskHandle()
@@ -98,8 +104,7 @@ class NiDaqThread(object):
         daqmx.CreateTask("", self.turbangtask)
 
         # Add channels to tasks
-        self.analogchans = ["torque_trans", "torque_arm",
-                            "drag_left", "drag_right"]
+        self.analogchans = ["torque_trans", "torque_arm", "drag_left", "drag_right"]
         self.carposchan = "carriage_pos"
         self.turbangchan = "turbine_angle"
         daqmx.AddGlobalChansToTask(self.analogtask, self.analogchans)
@@ -112,52 +117,70 @@ class NiDaqThread(object):
             self.chaninfo[channame] = {}
             scale = channame + "_scale"
             self.chaninfo[channame]["Scale name"] = scale
-            self.chaninfo[channame]["Scale slope"] = \
-            daqmx.GetScaleLinSlope(scale)
-            self.chaninfo[channame]["Scale y-intercept"] = \
-            daqmx.GetScaleLinYIntercept(scale)
-            self.chaninfo[channame]["Scaled units"] = \
-            daqmx.GetScaleScaledUnits(scale)
-            self.chaninfo[channame]["Prescaled units"] = \
-            daqmx.GetScalePreScaledUnits(scale)
+            self.chaninfo[channame]["Scale slope"] = daqmx.GetScaleLinSlope(scale)
+            self.chaninfo[channame]["Scale y-intercept"] = daqmx.GetScaleLinYIntercept(
+                scale
+            )
+            self.chaninfo[channame]["Scaled units"] = daqmx.GetScaleScaledUnits(scale)
+            self.chaninfo[channame]["Prescaled units"] = daqmx.GetScalePreScaledUnits(
+                scale
+            )
 
         self.chaninfo[self.turbangchan] = {}
-        self.chaninfo[self.turbangchan]["Pulses per rev"] = \
-        daqmx.GetCIAngEncoderPulsesPerRev(self.turbangtask, self.turbangchan)
-        self.chaninfo[self.turbangchan]["Units"] = \
-        daqmx.GetCIAngEncoderUnits(self.turbangtask, self.turbangchan)
+        self.chaninfo[self.turbangchan][
+            "Pulses per rev"
+        ] = daqmx.GetCIAngEncoderPulsesPerRev(self.turbangtask, self.turbangchan)
+        self.chaninfo[self.turbangchan]["Units"] = daqmx.GetCIAngEncoderUnits(
+            self.turbangtask, self.turbangchan
+        )
 
         self.chaninfo[self.carposchan] = {}
-        self.chaninfo[self.carposchan]["Distance per pulse"] = \
-        daqmx.GetCILinEncoderDisPerPulse(self.carpostask, self.carposchan)
-        self.chaninfo[self.carposchan]["Units"] = \
-        daqmx.GetCILinEncoderUnits(self.carpostask, self.carposchan)
+        self.chaninfo[self.carposchan][
+            "Distance per pulse"
+        ] = daqmx.GetCILinEncoderDisPerPulse(self.carpostask, self.carposchan)
+        self.chaninfo[self.carposchan]["Units"] = daqmx.GetCILinEncoderUnits(
+            self.carpostask, self.carposchan
+        )
         self.metadata["Channel info"] = self.chaninfo
 
         # Configure sample clock timing
-        daqmx.CfgSampClkTiming(self.analogtask, "", self.sr,
-                               daqmx.Val_Rising, daqmx.Val_ContSamps,
-                               self.nsamps)
+        daqmx.CfgSampClkTiming(
+            self.analogtask,
+            "",
+            self.sr,
+            daqmx.Val_Rising,
+            daqmx.Val_ContSamps,
+            self.nsamps,
+        )
         # Get source for analog sample clock
-        trigname = daqmx.GetTerminalNameWithDevPrefix(self.analogtask,
-                                                      "ai/SampleClock")
-        daqmx.CfgSampClkTiming(self.carpostask, trigname, self.sr,
-                               daqmx.Val_Rising, daqmx.Val_ContSamps,
-                               self.nsamps)
-        daqmx.CfgSampClkTiming(self.turbangtask, trigname, self.sr,
-                               daqmx.Val_Rising, daqmx.Val_ContSamps,
-                               self.nsamps)
+        trigname = daqmx.GetTerminalNameWithDevPrefix(self.analogtask, "ai/SampleClock")
+        daqmx.CfgSampClkTiming(
+            self.carpostask,
+            trigname,
+            self.sr,
+            daqmx.Val_Rising,
+            daqmx.Val_ContSamps,
+            self.nsamps,
+        )
+        daqmx.CfgSampClkTiming(
+            self.turbangtask,
+            trigname,
+            self.sr,
+            daqmx.Val_Rising,
+            daqmx.Val_ContSamps,
+            self.nsamps,
+        )
 
         # If using trigger for analog signals set source to chassis PFI0
         if self.usetrigger:
-            daqmx.CfgDigEdgeStartTrig(self.analogtask, "/cDAQ9188-16D66BB/PFI0",
-                                      daqmx.Val_Falling)
+            daqmx.CfgDigEdgeStartTrig(
+                self.analogtask, "/cDAQ9188-16D66BB/PFI0", daqmx.Val_Falling
+            )
 
         # Set trigger functions for counter channels
         daqmx.SetStartTrigType(self.carpostask, daqmx.Val_DigEdge)
         daqmx.SetStartTrigType(self.turbangtask, daqmx.Val_DigEdge)
-        trigsrc = \
-        daqmx.GetTrigSrcWithDevPrefix(self.analogtask, "ai/StartTrigger")
+        trigsrc = daqmx.GetTrigSrcWithDevPrefix(self.analogtask, "ai/StartTrigger")
         print("Trigger source:", trigsrc)
         daqmx.SetDigEdgeStartTrigSrc(self.carpostask, trigsrc)
         daqmx.SetDigEdgeStartTrigSrc(self.turbangtask, trigsrc)
@@ -166,56 +189,76 @@ class NiDaqThread(object):
 
     def run(self, dur):
         """Start DAQmx tasks."""
+
         # Acquire and throwaway samples for alignment
         # Need to set these up on a different task?
         # Callback code from PyDAQmx
         class MyList(list):
             pass
+
         # List where the data are stored
         data = MyList()
         id_data = daqmx.create_callbackdata_id(data)
 
-        def EveryNCallback_py(taskHandle, everyNsamplesEventType, nSamples,
-                              callbackData_ptr):
+        def EveryNCallback_py(
+            taskHandle, everyNsamplesEventType, nSamples, callbackData_ptr
+        ):
             """Function called every N samples"""
             callbackdata = daqmx.get_callbackdata_from_id(callbackData_ptr)
-            data, npoints = daqmx.ReadAnalogF64(taskHandle, self.nsamps,
-                    10.0, daqmx.Val_GroupByChannel, self.nsamps,
-                    len(self.analogchans))
+            data, npoints = daqmx.ReadAnalogF64(
+                taskHandle,
+                self.nsamps,
+                10.0,
+                daqmx.Val_GroupByChannel,
+                self.nsamps,
+                len(self.analogchans),
+            )
             callbackdata.extend(data.tolist())
-            self.data["torque_trans"] = np.append(self.data["torque_trans"],
-                                                  data[:,0], axis=0)
-            self.data["torque_arm"] = np.append(self.data["torque_arm"],
-                                                data[:,1], axis=0)
-            self.data["drag_left"] = np.append(self.data["drag_left"],
-                                                data[:,2], axis=0)
-            self.data["drag_right"] = np.append(self.data["drag_right"],
-                                                data[:,3], axis=0)
-            self.data["t"] = np.arange(len(self.data["torque_trans"]),
-                                       dtype=float)/self.sr
-            carpos, cpoints = daqmx.ReadCounterF64(self.carpostask,
-                                                   self.nsamps, 10.0,
-                                                   self.nsamps)
-            self.data["carriage_pos"] = np.append(self.data["carriage_pos"],
-                                                  carpos)
-            turbang, cpoints = daqmx.ReadCounterF64(self.turbangtask,
-                                                    self.nsamps, 10.0,
-                                                    self.nsamps)
-            self.data["turbine_angle"] = np.append(self.data["turbine_angle"],
-                                                   turbang)
-            self.data["turbine_rpm"] \
-                = ts.smooth(fdiff.second_order_diff(self.data["turbine_angle"],
-                                          self.data["t"])/6.0, 50)
-            return 0 # The function should return an integer
+            self.data["torque_trans"] = np.append(
+                self.data["torque_trans"], data[:, 0], axis=0
+            )
+            self.data["torque_arm"] = np.append(
+                self.data["torque_arm"], data[:, 1], axis=0
+            )
+            self.data["drag_left"] = np.append(
+                self.data["drag_left"], data[:, 2], axis=0
+            )
+            self.data["drag_right"] = np.append(
+                self.data["drag_right"], data[:, 3], axis=0
+            )
+            self.data["t"] = (
+                np.arange(len(self.data["torque_trans"]), dtype=float) / self.sr
+            )
+            carpos, cpoints = daqmx.ReadCounterF64(
+                self.carpostask, self.nsamps, 10.0, self.nsamps
+            )
+            self.data["carriage_pos"] = np.append(self.data["carriage_pos"], carpos)
+            turbang, cpoints = daqmx.ReadCounterF64(
+                self.turbangtask, self.nsamps, 10.0, self.nsamps
+            )
+            self.data["turbine_angle"] = np.append(self.data["turbine_angle"], turbang)
+            self.data["turbine_rpm"] = ts.smooth(
+                fdiff.second_order_diff(self.data["turbine_angle"], self.data["t"])
+                / 6.0,
+                50,
+            )
+            return 0  # The function should return an integer
 
         # Convert the python callback function to a CFunction
         EveryNCallback = daqmx.EveryNSamplesEventCallbackPtr(EveryNCallback_py)
-        daqmx.RegisterEveryNSamplesEvent(self.analogtask,
-                daqmx.Val_Acquired_Into_Buffer, self.nsamps, 0,
-                EveryNCallback, id_data)
+        daqmx.RegisterEveryNSamplesEvent(
+            self.analogtask,
+            daqmx.Val_Acquired_Into_Buffer,
+            self.nsamps,
+            0,
+            EveryNCallback,
+            id_data,
+        )
+
         def DoneCallback_py(taskHandle, status, callbackData_ptr):
             print("Status", status.value)
             return 0
+
         DoneCallback = daqmx.DoneEventCallbackPtr(DoneCallback_py)
         daqmx.RegisterDoneEvent(self.analogtask, 0, DoneCallback, None)
 
@@ -239,14 +282,17 @@ class NiDaqThread(object):
         daqmx.ClearTask(self.turbangtask)
         self.collect = False
 
+
 def test_ni_daq_thread(dur=1):
     t = NiDaqThread(usetrigger=False)
     t.run(dur)
     plt.plot(t.data["t"], t.data["drag_left"])
 
+
 def test_task(duration=3):
     import time
     import matplotlib.pyplot as plt
+
     task = daqmx.tasks.Task()
     c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
@@ -264,10 +310,12 @@ def test_task(duration=3):
     plt.plot(task.data["time"], task.data[c.name])
     plt.plot(task.data["time"], task.data[c2.name])
 
+
 def test_task_autologging(filetype=".csv", duration=3):
     import time
     import matplotlib.pyplot as plt
     from pxl import timeseries
+
     print("Testing autologging to", filetype)
     task = daqmx.tasks.Task()
     c = daqmx.channels.AnalogInputVoltageChannel()
@@ -292,10 +340,12 @@ def test_task_autologging(filetype=".csv", duration=3):
     print("Deleting test CSV")
     os.remove("test.csv")
 
+
 def test_task_autotrim(duration=5):
     print("Testing task autotrim functionality")
     import time
     import matplotlib.pyplot as plt
+
     task = daqmx.tasks.Task()
     c = daqmx.channels.AnalogInputVoltageChannel()
     c.physical_channel = "Dev1/ai0"
