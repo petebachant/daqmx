@@ -400,6 +400,7 @@ def test_ai_task_callbacks():
         return 0  # The function should return an integer
 
     # Convert the python function to a C function callback
+    print("id_data:", id_data)
     EveryNCallback = daqmx.EveryNSamplesEventCallbackPtr(EveryNCallback_py)
     daqmx.RegisterEveryNSamplesEvent(
         taskHandle,
